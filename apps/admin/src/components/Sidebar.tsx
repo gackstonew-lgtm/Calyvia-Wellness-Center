@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import {
   Users,
   UserCheck,
@@ -31,15 +30,27 @@ import {
   Webhook,
   Zap,
   Sparkles,
-  LayoutDashboard
+  LayoutDashboard,
+  X,
+  ShieldCheck,
 } from 'lucide-react';
+import { useTheme } from './ThemeProvider';
 
 interface SidebarProps {
   currentModule: string;
   onSelectModule: (moduleId: string) => void;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentModule, onSelectModule }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  currentModule,
+  onSelectModule,
+  mobileOpen = false,
+  onCloseMobile,
+}) => {
+  const { theme } = useTheme();
+
   const moduleSections = [
     {
       category: 'Overview & Executive',
@@ -101,35 +112,50 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentModule, onSelectModule 
     },
   ];
 
-  return (
-    <aside className="w-72 bg-[#0E1612] text-[#ECF2ED] h-screen flex flex-col flex-shrink-0 border-r border-[#1B2922] select-none overflow-hidden transition-colors duration-200">
+  const handleItemClick = (id: string) => {
+    onSelectModule(id);
+    if (onCloseMobile) {
+      onCloseMobile();
+    }
+  };
+
+  const sidebarContent = (
+    <div className="w-72 bg-surface text-foreground h-full flex flex-col border-r border-border select-none overflow-hidden transition-colors duration-200">
       {/* Brand Header with Optimized Transparent Logo */}
-      <div className="p-4 bg-[#0B120E] border-b border-[#1B2922] flex items-center justify-between">
+      <div className="p-4 bg-surface border-b border-border flex items-center justify-between">
         <div className="flex items-center space-x-3 w-full">
-          <div className="relative w-10 h-10 flex-shrink-0 bg-[#142019] p-1 rounded-xl border border-[#23382C] shadow-sm flex items-center justify-center">
-            {/* Optimized Vector Emblem */}
+          <div className="relative w-10 h-10 flex-shrink-0 bg-primary-soft p-1.5 rounded-xl border border-primary/20 shadow-xs flex items-center justify-center">
             <img
-              src="/brand/calyvia-emblem-dark.svg"
-              alt="Calyvia Wellness Emblem"
-              width={32}
-              height={32}
-              className="w-8 h-8 object-contain"
+              src={theme === 'dark' ? '/brand/calyvia-emblem-dark.svg' : '/brand/calyvia-emblem-light.svg'}
+              alt="Calyvia Emblem"
+              width={28}
+              height={28}
+              className="w-7 h-7 object-contain"
             />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="font-serif text-base font-bold tracking-tight text-white leading-tight truncate">
+            <h1 className="font-serif text-base font-bold tracking-tight text-foreground leading-tight truncate">
               Calyvia Wellness
             </h1>
-            <p className="text-[11px] text-[#7BA888] font-sans truncate">Ruiru, Kenya • HMIS/EMR</p>
+            <p className="text-[11px] text-muted-foreground font-sans truncate">Ruiru, Kenya • HMIS / EMR</p>
           </div>
+          {onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="md:hidden p-1.5 rounded-lg text-muted-foreground hover:bg-surface-elevated hover:text-foreground"
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Navigation List */}
-      <div className="flex-1 overflow-y-auto py-3 px-2 space-y-4 text-xs font-sans">
+      {/* Navigation List with rounded pill design inspired by Holistic */}
+      <div className="flex-1 overflow-y-auto py-3 px-3 space-y-4 text-xs font-sans">
         {moduleSections.map((section, idx) => (
           <div key={idx} className="space-y-1">
-            <h2 className="px-2 text-[10px] uppercase font-bold tracking-wider text-[#7BA888]/80">
+            <h2 className="px-3 text-[10px] uppercase font-bold tracking-wider text-muted-foreground/80">
               {section.category}
             </h2>
             {section.items.map((item) => {
@@ -138,14 +164,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentModule, onSelectModule 
               return (
                 <button
                   key={item.id}
-                  onClick={() => onSelectModule(item.id)}
-                  className={`w-full flex items-center space-x-2.5 px-2.5 py-2 rounded-lg transition-all text-left ${
+                  onClick={() => handleItemClick(item.id)}
+                  className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl transition-all duration-150 text-left ${
                     isActive
-                      ? 'bg-[#1C2C23] text-white font-medium border-l-4 border-[#48A368] shadow-sm'
-                      : 'text-[#94A69A] hover:bg-[#142019] hover:text-white'
+                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                      : 'text-muted-foreground hover:bg-surface-subtle hover:text-foreground'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-[#48A368]' : 'text-[#7BA888]/60'}`} />
+                  <Icon
+                    className={`w-4 h-4 flex-shrink-0 ${
+                      isActive ? 'text-primary-foreground' : 'text-muted-foreground/70'
+                    }`}
+                  />
                   <span className="truncate">{item.name}</span>
                 </button>
               );
@@ -154,17 +184,65 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentModule, onSelectModule 
         ))}
       </div>
 
-      {/* Footer Info */}
-      <div className="p-3 bg-[#0B120E] border-t border-[#1B2922] text-[11px] text-[#94A69A]">
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Server: Online</span>
-          </span>
-          <span className="text-[#7BA888] font-mono">EAT (UTC+3)</span>
+      {/* User Profile Card & Sign Out at Bottom */}
+      <div className="p-3 bg-surface-subtle border-t border-border space-y-2">
+        <div className="flex items-center justify-between p-2 rounded-xl bg-surface border border-border shadow-xs">
+          <div className="flex items-center space-x-2.5 min-w-0">
+            <div className="relative w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-xs">
+              <span>DB</span>
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-surface" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-foreground truncate flex items-center gap-1">
+                <span>Dr. Antony Baraka</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground truncate">Medical Director / Admin</p>
+            </div>
+          </div>
+          <button
+            title="Sign Out"
+            aria-label="Sign Out"
+            onClick={() => alert('Authentication session locked. Re-authenticate to access sensitive EMR data.')}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-danger hover:bg-danger-soft transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
-        <p className="text-[10px] text-[#94A69A]/70 mt-0.5">KDPA 2019 Compliant • Supabase DB</p>
+
+        {/* Server & Compliance Status */}
+        <div className="px-2 py-1 flex items-center justify-between text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Supabase: Connected</span>
+          </span>
+          <span className="font-mono text-secondary">KDPA 2019</span>
+        </div>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Persistent Sidebar */}
+      <aside className="hidden md:flex flex-shrink-0 h-screen sticky top-0 z-30">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Sliding Drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+            onClick={onCloseMobile}
+          />
+          {/* Sidebar Drawer */}
+          <div className="relative z-10 w-72 max-w-[85vw] h-full shadow-2xl animate-in slide-in-from-left duration-200">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 };
+
