@@ -115,18 +115,67 @@ npm test
 ```
 
 ### 5. Running the Application Locally
+
+Run both the API and Admin dashboard simultaneously with a single root command:
+
 ```bash
-# Terminal 1: Start NestJS REST API (Port 4000)
+# Unified command (runs API on :4000 and Admin on :3000 concurrently)
+npm run dev
+```
+
+Or run each service individually in separate terminals:
+
+```bash
+# Terminal 1: Start NestJS REST API (Port 4000 with hot-reload watch mode)
 npm run dev:api
 
 # Terminal 2: Start Next.js Admin Dashboard (Port 3000)
 npm run dev:admin
 ```
-- **Admin Dashboard:** [http://localhost:3000](http://localhost:3000)
-- **API Swagger Documentation:** [http://localhost:4000/api/docs](http://localhost:4000/api/docs)
-- **REST API Base URL:** [http://localhost:4000/api/v1](http://localhost:4000/api/v1)
 
-### 6. Running with Docker Compose
+#### Service URLs & Ports
+
+| Service | Port | Local URL | Description |
+| :--- | :--- | :--- | :--- |
+| **Admin & Clinical Dashboard** | `3000` | [http://localhost:3000](http://localhost:3000) | Next.js 14 management portal |
+| **REST API Base** | `4000` | [http://localhost:4000/api/v1](http://localhost:4000/api/v1) | NestJS modular REST API |
+| **Health Check Endpoint** | `4000` | [http://localhost:4000/api/v1/health](http://localhost:4000/api/v1/health) | Lightweight health & uptime verification |
+| **OpenAPI / Swagger Docs** | `4000` | [http://localhost:4000/api/docs](http://localhost:4000/api/docs) | Interactive API documentation |
+
+#### Required Environment Variables (see `.env.example`)
+
+Before running in production or connecting to external services, create `.env` from `.env.example`:
+
+- `PORT`: REST API listening port (default `4000`).
+- `DATABASE_URL`: PostgreSQL connection string (e.g. `postgresql://postgres:postgres@localhost:5432/calyvia_db?schema=public`). *Note: In local development, an in-memory resilient fallback activates if the database is deferred.*
+- `JWT_SECRET` & `JWT_REFRESH_SECRET`: Secure cryptographic strings for JWT token generation.
+- `ENCRYPTION_MASTER_KEY`: 64-character hexadecimal key for AES-256-GCM field-level encryption of sensitive health data.
+
+### 6. Troubleshooting: `MODULE_NOT_FOUND apps/api/dist/main`
+
+If you encounter:
+```
+Found 0 errors. Watching for file changes.
+Error: Cannot find module '...\apps\api\dist\main' (MODULE_NOT_FOUND)
+```
+
+- **Root Cause:** Occurs when TypeScript's incremental build cache (`.tsbuildinfo`) survives outside `dist/` while `dist/` is cleaned or removed by `deleteOutDir`. Because the source files appear unchanged to `tsc`, the watch compiler emits no new JavaScript files, leading Node to fail when looking for `dist/main.js`.
+- **Permanent Fix in Codebase:**
+  1. `incremental: false` is explicitly set in `apps/api/tsconfig.build.json` and `packages/shared/tsconfig.json` so cleans always trigger a full emit.
+  2. `entryFile: "main"` is explicitly configured in `apps/api/nest-cli.json`.
+  3. A dedicated health check endpoint is provided at `GET /api/v1/health`.
+- **Recovery Steps (if cache becomes corrupted):**
+  ```cmd
+  REM Clean build directories and any stray tsbuildinfo files
+  rmdir /s /q apps\api\dist
+  del /s /q *.tsbuildinfo
+  
+  REM Rebuild shared packages and launch dev
+  npm run build --workspace=@calyvia/shared
+  npm run dev
+  ```
+
+### 7. Running with Docker Compose
 ```bash
 docker compose up -d --build
 ```

@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 
+import { AppController } from './app.controller';
+
 // Foundations
 import { CryptoModule } from './common/crypto/crypto.module';
 import { SecurityModule } from './modules/security/security.module';
@@ -92,6 +94,7 @@ import { AiExtensionModule } from './modules/ai-extension/ai-extension.module';
     SystemAdminModule,
     AiExtensionModule,
   ],
+  controllers: [AppController],
   providers: [
     PrismaService,
     {
