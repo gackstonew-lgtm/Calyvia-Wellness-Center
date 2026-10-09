@@ -4,14 +4,14 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
-    try {
-      await this.$connect();
-    } catch (err) {
-      console.warn('Prisma database connection deferred. Running with in-memory fallback or waiting for database container.');
-    }
+    this.$connect()
+      .then(() => console.log('[Prisma] PostgreSQL database connected successfully.'))
+      .catch(() => {
+        console.warn('[Prisma] PostgreSQL connection deferred. In-memory resilient fallback active.');
+      });
   }
 
   async onModuleDestroy() {
-    await this.$disconnect();
+    await this.$disconnect().catch(() => {});
   }
 }

@@ -7,6 +7,7 @@ import { CryptoModule } from './common/crypto/crypto.module';
 import { SecurityModule } from './modules/security/security.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor';
+import { PrismaModule } from './database/prisma.module';
 import { PrismaService } from './database/prisma.service';
 
 // Intake & Relationships
@@ -49,6 +50,7 @@ import { AiExtensionModule } from './modules/ai-extension/ai-extension.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
     CryptoModule,
     AuditModule,
     SecurityModule,
