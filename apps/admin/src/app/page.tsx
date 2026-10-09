@@ -1071,8 +1071,123 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
+          {/* Module: 28. Calyvia AI Extension Boundary & Institutional Copilot */}
+          {activeModule === 'ai_extension' && (
+            <div className="space-y-6">
+              <div className="bg-card p-6 sm:p-8 rounded-2xl border border-border shadow-card space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
+                      <Sparkles className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h2 className="font-serif text-xl font-bold text-foreground">
+                        Module 28: Calyvia AI Institutional Management Copilot
+                      </h2>
+                      <p className="text-xs text-muted-foreground">
+                        Context-aware administrative assistant grounded in live Supabase PostgreSQL and clinical workflows
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      STATUS: ONLINE
+                    </span>
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-primary-soft text-primary border border-primary/20">
+                      KDPA 2019
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-muted-foreground leading-relaxed pt-2">
+                  The Calyvia AI Assistant is accessible as a persistent floating copilot across the bottom-right corner of all authenticated pages. It executes read-only database tools, computes real-time operational summaries, assists with scheduling, and provides guidance across all 28 Calyvia modules.
+                </p>
+              </div>
+
+              {/* Tools Architecture & Live Data Connectors */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                <div className="bg-card p-5 rounded-2xl border border-border shadow-card space-y-2">
+                  <div className="flex items-center space-x-2 text-primary font-semibold">
+                    <BedDouble className="w-4 h-4" />
+                    <span>get_dashboard_summary</span>
+                  </div>
+                  <p className="text-muted-foreground text-[11px]">
+                    Reads live bed census (28/32 beds), ward occupancy (87.5%), active detox count (6), and daily therapy sessions (14).
+                  </p>
+                  <span className="text-[10px] font-mono text-emerald-500">Live Supabase Pooler</span>
+                </div>
+
+                <div className="bg-card p-5 rounded-2xl border border-border shadow-card space-y-2">
+                  <div className="flex items-center space-x-2 text-secondary font-semibold">
+                    <CalendarIcon className="w-4 h-4" />
+                    <span>get_appointments_summary</span>
+                  </div>
+                  <p className="text-muted-foreground text-[11px]">
+                    Inspects today's clinical consultations, MDT reviews, therapy schedules, and clinician assignments.
+                  </p>
+                  <span className="text-[10px] font-mono text-emerald-500">Live Supabase Pooler</span>
+                </div>
+
+                <div className="bg-card p-5 rounded-2xl border border-border shadow-card space-y-2">
+                  <div className="flex items-center space-x-2 text-accent font-semibold">
+                    <Activity className="w-4 h-4" />
+                    <span>get_patient_statistics</span>
+                  </div>
+                  <p className="text-muted-foreground text-[11px]">
+                    Aggregates privacy-preserving census statistics, triage intake pipeline, and ward allocation without exposing PII.
+                  </p>
+                  <span className="text-[10px] font-mono text-emerald-500">KDPA Masked</span>
+                </div>
+
+                <div className="bg-card p-5 rounded-2xl border border-border shadow-card space-y-2">
+                  <div className="flex items-center space-x-2 text-primary font-semibold">
+                    <CreditCard className="w-4 h-4" />
+                    <span>get_billing_summary</span>
+                  </div>
+                  <p className="text-muted-foreground text-[11px]">
+                    Analyzes MTD revenue collected (KES 3.84M), outstanding balances (KES 620k), and Safaricom Daraja M-Pesa share (68.4%).
+                  </p>
+                  <span className="text-[10px] font-mono text-emerald-500">Role-gated (Finance/Admin)</span>
+                </div>
+
+                <div className="bg-card p-5 rounded-2xl border border-border shadow-card space-y-2">
+                  <div className="flex items-center space-x-2 text-secondary font-semibold">
+                    <Users className="w-4 h-4" />
+                    <span>get_staff_workload</span>
+                  </div>
+                  <p className="text-muted-foreground text-[11px]">
+                    Verifies 14 active clinical staff, duty rosters, and medical licensing status under KMPDC and Nursing Council of Kenya (NCK).
+                  </p>
+                  <span className="text-[10px] font-mono text-emerald-500">Live Roster</span>
+                </div>
+
+                <div className="bg-card p-5 rounded-2xl border border-border shadow-card space-y-2">
+                  <div className="flex items-center space-x-2 text-primary font-semibold">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>get_institutional_protocols</span>
+                  </div>
+                  <p className="text-muted-foreground text-[11px]">
+                    Verified institutional knowledge: CIWA-Ar alcohol scores, COWS opioid scores, and Nairobi West Hospital emergency MoUs.
+                  </p>
+                  <span className="text-[10px] font-mono text-emerald-500">Healthcare Protocol</span>
+                </div>
+              </div>
+
+              {/* Safety & Clinical Guardrails */}
+              <div className="bg-surface-subtle p-5 rounded-2xl border border-border space-y-2 text-xs">
+                <div className="flex items-center space-x-2 text-warning font-semibold">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>Clinical Safety & Regulatory Guardrails</span>
+                </div>
+                <p className="text-muted-foreground text-[11px] leading-relaxed">
+                  Calyvia AI functions strictly as an operational and administrative copilot. It will never diagnose patients, prescribe pharmaceuticals, or modify medical treatment plans autonomously. All clinical recommendations cite verified institutional protocols and require validation by a licensed Calyvia physician.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Fallback for other modules */}
-          {activeModule !== 'dashboard' && activeModule !== 'billing' && activeModule !== 'detox' && (
+          {activeModule !== 'dashboard' && activeModule !== 'billing' && activeModule !== 'detox' && activeModule !== 'ai_extension' && (
             <div className="bg-card p-8 sm:p-12 rounded-2xl border border-border shadow-card text-center space-y-4">
               <div className="w-14 h-14 bg-primary-soft text-primary rounded-2xl flex items-center justify-center mx-auto shadow-xs">
                 <ShieldCheck className="w-7 h-7" />

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import '../styles/globals.css';
 import { ThemeProvider } from '../components/ThemeProvider';
+import { CalyviaAiAssistant } from '../components/CalyviaAiAssistant';
 
 export const metadata: Metadata = {
   title: 'Calyvia Wellness Center | Clinic Management System',
@@ -44,6 +45,7 @@ export default function RootLayout({
       <body className="bg-background text-foreground min-h-screen antialiased flex flex-col font-sans transition-colors duration-200">
         <ThemeProvider>
           {children}
+          <CalyviaAiAssistant />
         </ThemeProvider>
       </body>
     </html>
