@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Search, Bell, Shield, Phone, Clock, Sun, Moon, Menu, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Bell, Shield, Sun, Moon, Menu, Settings } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 
 interface HeaderProps {
@@ -10,26 +10,8 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onSelectModule }) => {
-  const [time, setTime] = useState<string>('');
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
   const { theme, toggleTheme } = useTheme();
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setTime(
-        now.toLocaleTimeString('en-KE', {
-          timeZone: 'Africa/Nairobi',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        }),
-      );
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <header className="h-16 bg-surface border-b border-border px-4 sm:px-6 flex items-center justify-between shadow-xs z-20 transition-colors duration-200">
@@ -60,44 +42,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onSelectModu
         </div>
       </div>
 
-      {/* Right: Facility Context, Time, Actions, Theme & Profile */}
-      <div className="flex items-center space-x-2 sm:space-x-3 text-xs">
-        {/* Nairobi Clock */}
-        <div className="hidden lg:flex items-center space-x-1.5 text-muted-foreground font-mono bg-surface-subtle px-2.5 py-1.5 rounded-xl border border-border">
-          <Clock className="w-3.5 h-3.5 text-primary" />
-          <span>{time || '12:00:00'} EAT</span>
-        </div>
-
-        {/* Emergency Helpline */}
-        <div className="hidden xl:flex items-center space-x-1.5 text-primary font-medium bg-primary-soft px-2.5 py-1.5 rounded-xl border border-primary/20">
-          <Phone className="w-3.5 h-3.5 text-primary" />
-          <span>+254 700 534 306</span>
-        </div>
-
-        {/* Theme Toggle Button */}
-        <button
-          onClick={toggleTheme}
-          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          className="w-9 h-9 rounded-xl bg-surface border border-border text-foreground flex items-center justify-center hover:bg-surface-elevated hover:border-primary/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-xs"
-        >
-          {theme === 'dark' ? (
-            <Sun className="w-4 h-4 text-amber-400" />
-          ) : (
-            <Moon className="w-4 h-4 text-primary" />
-          )}
-        </button>
-
-        {/* Settings Button */}
-        <button
-          onClick={() => onSelectModule && onSelectModule('system_admin')}
-          title="System Settings"
-          aria-label="System Settings"
-          className="w-9 h-9 rounded-xl bg-surface border border-border text-muted-foreground hover:text-foreground flex items-center justify-center hover:bg-surface-elevated hover:border-primary/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-xs"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
-
+      {/* Right: Notifications & Integrated User Profile (with Theme & Settings inside) */}
+      <div className="flex items-center space-x-3 text-xs">
         {/* Clinical Alerts / Notification Bell */}
         <div className="relative">
           <button
@@ -146,18 +92,51 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onSelectModu
           )}
         </div>
 
-        {/* User Profile Pill */}
-        <div className="flex items-center space-x-2.5 border-l border-border pl-2.5 sm:pl-3">
-          <div className="relative w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shadow-xs">
-            <span>DB</span>
-            <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border-2 border-surface" />
-          </div>
-          <div className="hidden sm:block text-left">
-            <div className="font-semibold text-foreground leading-tight flex items-center space-x-1">
-              <span>Dr. Baraka</span>
-              <Shield className="w-3 h-3 text-secondary" />
+        {/* DB Dr. Baraka Medical Director button with Theme and Settings inserted inside */}
+        <div className="flex items-center space-x-2.5 bg-surface border border-border rounded-2xl p-1.5 pl-2 sm:pl-2.5 shadow-xs transition-colors">
+          {/* Avatar & Staff Identity */}
+          <div className="flex items-center space-x-2 sm:space-x-2.5 pr-1 sm:pr-2">
+            <div className="relative w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shadow-xs flex-shrink-0">
+              <span>DB</span>
+              <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border-2 border-surface" />
             </div>
-            <div className="text-[10px] text-muted-foreground">Medical Director</div>
+            <div className="hidden sm:block text-left">
+              <div className="font-semibold text-foreground leading-tight flex items-center space-x-1">
+                <span>Dr. Baraka</span>
+                <Shield className="w-3 h-3 text-secondary" />
+              </div>
+              <div className="text-[10px] text-muted-foreground">Medical Director</div>
+            </div>
+          </div>
+
+          {/* Vertical subtle divider */}
+          <div className="h-6 w-px bg-border flex-shrink-0" />
+
+          {/* Inserted Theme Change Button & Settings Button */}
+          <div className="flex items-center space-x-1">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-elevated border border-border text-foreground flex items-center justify-center hover:border-primary/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-2xs"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-3.5 h-3.5 text-amber-400" />
+              ) : (
+                <Moon className="w-3.5 h-3.5 text-primary" />
+              )}
+            </button>
+
+            {/* Settings Button */}
+            <button
+              onClick={() => onSelectModule && onSelectModule('system_admin')}
+              title="System Settings"
+              aria-label="System Settings"
+              className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-elevated border border-border text-muted-foreground hover:text-foreground flex items-center justify-center hover:border-primary/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-2xs"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>
