@@ -1,11 +1,16 @@
 import type { Metadata } from 'next';
 import '../styles/globals.css';
+import { ThemeProvider } from '../components/ThemeProvider';
 
 export const metadata: Metadata = {
   title: 'Calyvia Wellness Center | Clinic Management System',
   description: 'Enterprise HMIS/EMR & Administration Portal for Calyvia Wellness Center, Ruiru, Kenya',
   icons: {
-    icon: 'https://calyviawellness.co.ke/img/calyvia-logo.png',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/brand/calyvia-emblem-light.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/brand/calyvia-emblem-light.svg',
   },
 };
 
@@ -15,9 +20,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="bg-sand-50 text-[#3D2E28] min-h-screen antialiased flex flex-col font-sans">
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const t = localStorage.getItem('calyvia_theme');
+                if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  document.documentElement.classList.add('dark');
+                  document.documentElement.classList.remove('light');
+                  document.documentElement.style.colorScheme = 'dark';
+                } else {
+                  document.documentElement.classList.add('light');
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.style.colorScheme = 'light';
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
+      <body className="bg-background text-foreground min-h-screen antialiased flex flex-col font-sans transition-colors duration-200">
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

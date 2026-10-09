@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -8,13 +9,74 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Semantic Token Mapping
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
+        surface: {
+          DEFAULT: 'var(--surface)',
+          subtle: 'var(--surface-subtle)',
+          elevated: 'var(--surface-elevated)',
+        },
+        card: {
+          DEFAULT: 'var(--card)',
+          foreground: 'var(--card-foreground)',
+          inner: 'var(--card-inner)',
+        },
+        border: {
+          DEFAULT: 'var(--border)',
+          subtle: 'var(--border-subtle)',
+          strong: 'var(--border-strong)',
+        },
+        primary: {
+          DEFAULT: 'var(--primary)',
+          foreground: 'var(--primary-foreground)',
+          hover: 'var(--primary-hover)',
+          soft: 'var(--primary-soft)',
+        },
+        secondary: {
+          DEFAULT: 'var(--secondary)',
+          foreground: 'var(--secondary-foreground)',
+          soft: 'var(--secondary-soft)',
+        },
+        accent: {
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--accent-foreground)',
+          soft: 'var(--accent-soft)',
+        },
+        muted: {
+          DEFAULT: 'var(--muted)',
+          foreground: 'var(--muted-foreground)',
+        },
+        success: {
+          DEFAULT: 'var(--success)',
+          foreground: 'var(--success-foreground)',
+          soft: 'var(--success-soft)',
+        },
+        warning: {
+          DEFAULT: 'var(--warning)',
+          foreground: 'var(--warning-foreground)',
+          soft: 'var(--warning-soft)',
+        },
+        danger: {
+          DEFAULT: 'var(--danger)',
+          foreground: 'var(--danger-foreground)',
+          soft: 'var(--danger-soft)',
+        },
+        info: {
+          DEFAULT: 'var(--info)',
+          soft: 'var(--info-soft)',
+        },
+
+        // Legacy compatibility palettes preserved
         forest: {
-          900: '#1A2F26',
-          800: '#2C4A3E', // Brand Primary
-          700: '#3D6656',
-          600: '#4D806D',
+          950: '#0D1411',
+          900: '#141E1A',
+          800: '#1F4E28', // Brand Primary
+          700: '#2C6638',
+          600: '#3D804E',
         },
         sage: {
+          600: '#48A368',
           500: '#6A9777',
           400: '#7BA888', // Brand Secondary
           300: '#8FB89C',
@@ -25,7 +87,7 @@ module.exports = {
         terracotta: {
           700: '#8F4E36',
           600: '#A65E43',
-          500: '#C17B5F', // Brand Accent (Counselling & Urgency)
+          500: '#C17B5F', // Brand Accent
           400: '#D0927B',
           100: '#FFF5F0',
         },
@@ -35,22 +97,22 @@ module.exports = {
           300: '#E8E0D8',
           200: '#E8DCC8',
           100: '#F5EFE6',
-          50: '#FDFBF7', // Brand Canvas
+          50: '#FDFBF7',
         },
         calyvia: {
-          primary: '#2C4A3E',
+          primary: '#1F4E28',
           secondary: '#7BA888',
           accent: '#C17B5F',
-          dark: '#3D2E28',
-          muted: '#6B5D56',
-          canvas: '#FDFBF7',
+          dark: '#1A2621',
+          muted: '#5B6B60',
+          canvas: '#F8F9FA',
           card: '#FFFFFF',
-          border: '#E8DCC8',
+          border: '#DDE4DF',
         }
       },
       fontFamily: {
         serif: ['"Crimson Pro"', 'Georgia', 'serif'],
-        sans: ['"Outfit"', 'system-ui', 'sans-serif'],
+        sans: ['"Outfit"', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
       borderRadius: {
@@ -60,6 +122,10 @@ module.exports = {
         xl: '16px',
         '2xl': '24px',
       },
+      boxShadow: {
+        card: 'var(--shadow-card)',
+        elevated: 'var(--shadow-elevated)',
+      }
     },
   },
   plugins: [],

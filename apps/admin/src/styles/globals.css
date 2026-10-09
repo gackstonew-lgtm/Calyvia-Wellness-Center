@@ -4,25 +4,154 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==============================================================================
+   CENTRALIZED DESIGN TOKENS & SURFACES
+   Inspired by modern design systems (high contrast, refined borders, clear surfaces)
+   Customized for Calyvia Wellness Center's organic green healthcare identity.
+   ============================================================================== */
+
 :root {
-  --background: #FDFBF7;
-  --foreground: #3D2E28;
-  --primary: #2C4A3E;
-  --secondary: #7BA888;
-  --accent: #C17B5F;
+  /* Surface & Base Canvas */
+  --background: #F8F9FA;
+  --foreground: #1A2621;
+  --surface: #FFFFFF;
+  --surface-subtle: #F1F4F2;
+  --surface-elevated: #E8ECE9;
+
+  /* Cards & Modals */
   --card: #FFFFFF;
-  --border: #E8DCC8;
+  --card-foreground: #1A2621;
+  --card-inner: #F8F9FA;
+
+  /* Calyvia Brand Primary (Rich Forest Green) */
+  --primary: #1F4E28;
+  --primary-foreground: #FFFFFF;
+  --primary-hover: #163B1E;
+  --primary-soft: #E8F2EA;
+
+  /* Calyvia Brand Secondary (Sage Green) */
+  --secondary: #6A9777;
+  --secondary-foreground: #FFFFFF;
+  --secondary-soft: #EFF5F1;
+
+  /* Calyvia Accent (Warm Terracotta / Gold) */
+  --accent: #C17B5F;
+  --accent-foreground: #FFFFFF;
+  --accent-soft: #FFF2EB;
+
+  /* Borders & Dividers */
+  --border: #DDE4DF;
+  --border-subtle: #EBEFEA;
+  --border-strong: #C4D1C7;
+  --input: #FFFFFF;
+  --ring: rgba(31, 78, 40, 0.25);
+
+  /* Muted Text & Backgrounds */
+  --muted: #EFF2EE;
+  --muted-foreground: #5B6B60;
+
+  /* Status Colors (Accessible Contrast) */
+  --success: #15803D;
+  --success-foreground: #FFFFFF;
+  --success-soft: #EBF8EE;
+  --warning: #B45309;
+  --warning-foreground: #FFFFFF;
+  --warning-soft: #FEF3C7;
+  --danger: #B91C1C;
+  --danger-foreground: #FFFFFF;
+  --danger-soft: #FEE2E2;
+  --info: #0369A1;
+  --info-soft: #E0F2FE;
+
+  /* Elevation Shadows */
+  --shadow-card: 0 1px 3px 0 rgba(26, 38, 33, 0.06), 0 1px 2px -1px rgba(26, 38, 33, 0.06);
+  --shadow-elevated: 0 4px 6px -1px rgba(26, 38, 33, 0.08), 0 2px 4px -2px rgba(26, 38, 33, 0.06);
+}
+
+.dark {
+  /* Surface & Base Canvas (Deep charcoal-slate with cool forest undertones) */
+  --background: #0D1411;
+  --foreground: #ECF2ED;
+  --surface: #141E1A;
+  --surface-subtle: #101915;
+  --surface-elevated: #1B2923;
+
+  /* Cards & Modals */
+  --card: #141E1A;
+  --card-foreground: #ECF2ED;
+  --card-inner: #192620;
+
+  /* Calyvia Brand Primary (Luminous Emerald-Sage for dark surfaces) */
+  --primary: #48A368;
+  --primary-foreground: #09130D;
+  --primary-hover: #5BB97B;
+  --primary-soft: #132A1E;
+
+  /* Calyvia Brand Secondary */
+  --secondary: #7BA888;
+  --secondary-foreground: #09130D;
+  --secondary-soft: #1B3125;
+
+  /* Calyvia Accent */
+  --accent: #E08C6E;
+  --accent-foreground: #1A0D08;
+  --accent-soft: #301B14;
+
+  /* Borders & Dividers */
+  --border: #23332A;
+  --border-subtle: #1A2620;
+  --border-strong: #2F4539;
+  --input: #141E1A;
+  --ring: rgba(72, 163, 104, 0.35);
+
+  /* Muted Text & Backgrounds */
+  --muted: #1B2923;
+  --muted-foreground: #94A69A;
+
+  /* Status Colors */
+  --success: #34D399;
+  --success-foreground: #062013;
+  --success-soft: #0E291C;
+  --warning: #FBBF24;
+  --warning-foreground: #241A04;
+  --warning-soft: #2D2309;
+  --danger: #F87171;
+  --danger-foreground: #220808;
+  --danger-soft: #2E1313;
+  --info: #38BDF8;
+  --info-soft: #0C2433;
+
+  /* Elevation Shadows */
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Crimson Pro', Georgia, serif;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
 }

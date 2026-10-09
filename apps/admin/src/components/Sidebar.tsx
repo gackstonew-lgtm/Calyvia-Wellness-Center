@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import {
   Users,
   UserCheck,
@@ -101,17 +102,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentModule, onSelectModule 
   ];
 
   return (
-    <aside className="w-72 bg-forest-900 text-sand-50 h-screen flex flex-col flex-shrink-0 border-r border-forest-800 select-none overflow-hidden">
-      {/* Brand Header */}
-      <div className="p-4 bg-forest-900 border-b border-forest-800 flex items-center space-x-3">
-        <div className="w-10 h-10 rounded-lg bg-forest-800 border border-sage-400/40 flex items-center justify-center font-serif text-xl font-bold text-sage-400 shadow-sm">
-          C
-        </div>
-        <div>
-          <h1 className="font-serif text-lg font-bold tracking-tight text-white leading-tight">
-            Calyvia Wellness
-          </h1>
-          <p className="text-xs text-sage-300 font-sans">Ruiru, Kenya • HMIS</p>
+    <aside className="w-72 bg-[#0E1612] text-[#ECF2ED] h-screen flex flex-col flex-shrink-0 border-r border-[#1B2922] select-none overflow-hidden transition-colors duration-200">
+      {/* Brand Header with Optimized Transparent Logo */}
+      <div className="p-4 bg-[#0B120E] border-b border-[#1B2922] flex items-center justify-between">
+        <div className="flex items-center space-x-3 w-full">
+          <div className="relative w-10 h-10 flex-shrink-0 bg-[#142019] p-1 rounded-xl border border-[#23382C] shadow-sm flex items-center justify-center">
+            {/* Optimized Vector Emblem */}
+            <img
+              src="/brand/calyvia-emblem-dark.svg"
+              alt="Calyvia Wellness Emblem"
+              width={32}
+              height={32}
+              className="w-8 h-8 object-contain"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="font-serif text-base font-bold tracking-tight text-white leading-tight truncate">
+              Calyvia Wellness
+            </h1>
+            <p className="text-[11px] text-[#7BA888] font-sans truncate">Ruiru, Kenya • HMIS/EMR</p>
+          </div>
         </div>
       </div>
 
@@ -119,7 +129,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentModule, onSelectModule 
       <div className="flex-1 overflow-y-auto py-3 px-2 space-y-4 text-xs font-sans">
         {moduleSections.map((section, idx) => (
           <div key={idx} className="space-y-1">
-            <h2 className="px-2 text-[10px] uppercase font-bold tracking-wider text-sage-400/70">
+            <h2 className="px-2 text-[10px] uppercase font-bold tracking-wider text-[#7BA888]/80">
               {section.category}
             </h2>
             {section.items.map((item) => {
@@ -129,13 +139,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentModule, onSelectModule 
                 <button
                   key={item.id}
                   onClick={() => onSelectModule(item.id)}
-                  className={`w-full flex items-center space-x-2.5 px-2.5 py-2 rounded-md transition-all text-left ${
+                  className={`w-full flex items-center space-x-2.5 px-2.5 py-2 rounded-lg transition-all text-left ${
                     isActive
-                      ? 'bg-forest-800 text-white font-medium border-l-4 border-sage-400 shadow-sm'
-                      : 'text-sand-300 hover:bg-forest-800/50 hover:text-white'
+                      ? 'bg-[#1C2C23] text-white font-medium border-l-4 border-[#48A368] shadow-sm'
+                      : 'text-[#94A69A] hover:bg-[#142019] hover:text-white'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-sage-400' : 'text-sand-400'}`} />
+                  <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-[#48A368]' : 'text-[#7BA888]/60'}`} />
                   <span className="truncate">{item.name}</span>
                 </button>
               );
@@ -145,12 +155,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentModule, onSelectModule 
       </div>
 
       {/* Footer Info */}
-      <div className="p-3 bg-forest-900/90 border-t border-forest-800 text-[11px] text-sand-400">
+      <div className="p-3 bg-[#0B120E] border-t border-[#1B2922] text-[11px] text-[#94A69A]">
         <div className="flex items-center justify-between">
-          <span>Server: Online</span>
-          <span className="text-sage-400 font-mono">EAT (UTC+3)</span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Server: Online</span>
+          </span>
+          <span className="text-[#7BA888] font-mono">EAT (UTC+3)</span>
         </div>
-        <p className="text-[10px] text-sand-500 mt-0.5">KDPA 2019 Compliant</p>
+        <p className="text-[10px] text-[#94A69A]/70 mt-0.5">KDPA 2019 Compliant • Supabase DB</p>
       </div>
     </aside>
   );
