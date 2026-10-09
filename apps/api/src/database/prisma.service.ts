@@ -1,17 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Injectable } from '@nestjs/common';
+import { SupabaseService } from './supabase.service';
 
+/**
+ * Compatibility alias: redirects legacy PrismaService references to SupabaseService
+ * communicating directly with hosted Supabase PostgreSQL.
+ */
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  async onModuleInit() {
-    this.$connect()
-      .then(() => console.log('[Prisma] PostgreSQL database connected successfully.'))
-      .catch(() => {
-        console.warn('[Prisma] PostgreSQL connection deferred. In-memory resilient fallback active.');
-      });
-  }
-
-  async onModuleDestroy() {
-    await this.$disconnect().catch(() => {});
-  }
-}
+export class PrismaService extends SupabaseService {}
