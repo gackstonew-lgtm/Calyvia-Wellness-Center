@@ -134,3 +134,31 @@ The admin dashboard will expose these tokens via CSS variables and Tailwind them
 ```
 
 This guarantees an elegant, reassuring, brand-coherent experience designed specifically for the healthcare professionals and administrative team at Calyvia Wellness Center.
+
+---
+
+## 6. Portal UI Conventions & Safe CMS Public Content Rendering
+
+### 1. Management Portal Conventions (`portal.calyviawellness.co.ke`)
+- **Protected Environment:** The portal operates strictly behind authenticated sessions with HTTP-only cookies on `portal.calyviawellness.co.ke`.
+- **Data-Dense Layout:** Clinical tables use compact row padding (`py-2` to `py-2.5`), sticky column headers, and explicit loading/empty/error states.
+- **Critical Action Safeguards:** Destructive or high-consequence clinical actions (e.g. discharging a patient, voiding an invoice, administering controlled medication) require double-confirmation dialogs with reason logging.
+- **Accessibility:** Meets WCAG 2.1 AA standards for color contrast, full keyboard navigation (focus rings on `sage-400`), and screen-reader announcements on dynamic clinical alerts.
+
+### 2. Public Site Protection & CMS Rendering Architecture
+The public marketing website (`https://calyviawellness.co.ke/`) is **strictly protected** and must never be redirected, replaced, or broken. The only permitted modification is rendering published CMS content (careers, blogs, news announcements, and designated editable sections).
+
+#### Strict Security Rules for Public Rendering:
+1. **Anon-Safe Public Views:** Public visitors (`anon` role) can **only** read from an isolated view:
+   ```sql
+   CREATE VIEW published_cms_posts AS
+     SELECT id, slug, title, summary, content_sanitized, featured_image_url, category, published_at, author_name
+     FROM cms_posts
+     WHERE status = 'PUBLISHED' AND published_at <= NOW();
+   ```
+2. **Drafts & Revisions Isolation:** All unpublished content (`DRAFT`, `IN_REVIEW`, `ARCHIVED`) and author notes have RLS policies set to **DENY** for the `anon` role. Leaking drafts to the public site is impossible.
+3. **XSS Sanitization:** Rich text generated in the staff portal editor is sanitized before persistence and before public rendering using strict DOMPurify rules (allowing only safe semantic HTML tags: `<p>`, `<h2>`, `<h3>`, `<ul>`, `<ol>`, `<li>`, `<blockquote>`, `<strong>`, `<em>`, `<a>`, `<img>`).
+4. **Storage Separation:** 
+   - Public CMS media is stored in `cms-public-media` bucket (read-only for `anon`).
+   - Patient charts, laboratory scans, and signed consent PDFs are stored in `patient-records-private` bucket (strictly forbidden to `anon` with signed URL tokens required).
+
