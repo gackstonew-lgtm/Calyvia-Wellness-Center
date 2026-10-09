@@ -1,77 +1,134 @@
-# ADR-001: Target Architecture for Calyvia Supabase Conversion
+# ADR-001: Target Architecture for Calyvia Supabase Migration
 
 **Document ID:** ADR-SUPABASE-001  
-**Status:** PROPOSED (Requires Project Owner / Tech Lead Approval)  
-**Author:** Developer 2 (Full-stack workflows / UI), Quantum Code Technologies  
-**Reviewers:** Dev 1 (Technical Lead / Backend), Dev 3 (QA / Integrations / DevOps)  
+**Status:** PROPOSED & RECOMMENDED (Option A: Hybrid)  
+**Author:** Principal Full-Stack Software Engineer (Developer 2), Quantum Code Technologies  
+**Reviewers:** Developer 1 (Technical Lead / Backend), Developer 3 (QA / Integrations / DevOps)  
 **Date:** 2026-10-09  
+**Target Environment:** Calyvia Wellness Center (`portal.calyviawellness.co.ke`)  
 
 ---
 
-## 1. Context & Problem Statement
+## 1. Context & Business Drivers
 
-Calyvia Wellness Center requires a secure, production-grade management portal (`portal.calyviawellness.co.ke`) and clinical system (HMIS/EMR) to digitise the recovery journey (Enquiry → Detox → Rehabilitation → Aftercare) and operational workflows. 
+Calyvia Wellness Center requires a secure, resilient Hospital Information Management System (HMIS) and Electronic Medical Records (EMR) system to manage inpatient and outpatient psychiatric rehabilitation in Ruiru, Kenya. 
 
-The project has an additional mandate to **convert and prepare the platform to run on Supabase as its primary backend hosting platform**. We have a 4-week timebox. We must evaluate whether to adopt a **Supabase-Native** architecture or a **Hybrid** architecture.
+The system encompasses **28 clinical, administrative, and financial modules**, handling highly sensitive health records (substance use history, psychiatric diagnoses, withdrawal vital signs, controlled medication dispensing) governed under the **Kenya Data Protection Act, 2019 (Sections 44–47)**.
 
----
+The project mandate requires preparing and transitioning the backend infrastructure to run on **Supabase** as its backend hosting platform (PostgreSQL, Auth, Storage, Edge Functions, Realtime, scheduled automation).
 
-## 2. Options Considered
-
-### Option 1: Supabase-Native Architecture
-- **Database & Data Access:** PostgreSQL 16 managed via Supabase CLI migrations (`/supabase/migrations/`). CRUD operations executed via PostgREST and `@supabase/ssr` directly from Next.js (App Router Server Components and Client Components).
-- **Security & Authorization:** Row Level Security (RLS) enabled on **100% of tables**. A secure database helper function (`auth.staff_role()`) evaluates role claims. Default deny policy.
-- **Authentication:** Supabase Auth (email/password with secure password reset; TOTP MFA for privileged clinical roles). Sessions managed via HTTP-only cookies on `portal.calyviawellness.co.ke`.
-- **Custom Business Logic & Webhooks:** Supabase Edge Functions (Deno/TypeScript) for external integration webhooks (Safaricom Daraja M-Pesa STK push and idempotent callbacks; public website enquiry form).
-- **Scheduled Automation:** `pg_cron` database schedules triggering stored procedures or webhook dispatches for detox vitals alarms, e-MAR dosing alerts, and aftercare follow-up cadences.
-- **File Storage:** Supabase Storage with private buckets (`patient-documents`, `clinical-consents`) protected by storage RLS policies and short-lived signed URLs. Dedicated public bucket for published CMS media.
-- **Realtime:** Supabase Realtime channels for non-sensitive aggregates (real-time bed census updates, on-duty nurse vitals alerts).
-
-### Option 2: Hybrid Architecture
-- Keep the current NestJS application as a separately hosted Node.js container service (e.g. on AWS ECS, Render, or Railway).
-- Replace the local PostgreSQL container with Supabase PostgreSQL.
-- Replace custom JWT signing with Supabase Auth verification in NestJS Passport strategy.
-- Retain NestJS controllers for all API endpoints, using Supabase Storage and Realtime via SDK.
+With a **4-week delivery timebox** and an absolute requirement to prioritize **clinical safety, data integrity, and compliance over speed**, we evaluated two core architectural strategies:
+1. **Option A: Hybrid Architecture** (NestJS application server on App Runner / VPS / container + Supabase Managed PostgreSQL, Supabase Auth verification, Supabase Storage, Supabase Realtime).
+2. **Option B: Supabase-Native Architecture** (Complete rewrite of the API layer into Next.js Server Actions / PostgREST direct client queries + Supabase Edge Functions + 100% database RLS).
 
 ---
 
-## 3. Comparison Matrix
+## 2. Options Evaluated
 
-| Evaluation Criteria | Option 1: Supabase-Native (Recommended) | Option 2: Hybrid |
-|---|---|---|
-| **Hosting & Operational Burden** | **Very Low.** Single platform (Supabase + Next.js Vercel/Node hosting). No separate backend container to monitor, patch, or scale. | **High.** Requires hosting and maintaining both the NestJS API container and the Supabase project. |
-| **Security Posture (Least Privilege)** | **Superior.** RLS enforces permissions at the database engine level. Even if frontend code is compromised, raw SQL/PostgREST queries cannot bypass RLS. | **Moderate.** Relies primarily on application-layer NestJS guards. Single database connection string bypasses database-level isolation. |
-| **Data Integrity & Concurrency** | **High.** Transactional Postgres functions (RPC) with exclusion constraints eliminate double-booking of beds and duplicate M-Pesa payments. | **High.** Handled via NestJS Prisma transactions. |
-| **Latency & Performance** | **Optimal.** Next.js Server Components query Postgres directly via connection pooler (Supavisor) without an intermediate HTTP API hop. | **Sub-optimal.** Frontend → NestJS API → Supabase PostgreSQL (two network hops). |
-| **4-Week Timebox Feasibility** | **Feasible.** Schema is already designed and tested; converting Prisma to Supabase SQL DDL is mechanical; Next.js App Router natively pairs with `@supabase/ssr`. | **Feasible.** Less migration code in Week 1, but higher DevOps, staging, and deployment burden in Weeks 3–4. |
-| **Cost for Calyvia Facility** | **Low.** Supabase Pro tier covers Postgres, Auth, Storage, Edge Functions, and Backups under a single predictable subscription. | **Higher.** Requires separate server instance for NestJS API plus Supabase subscription. |
+### Option A: Hybrid Architecture (Recommended)
 
----
-
-## 4. Recommendation & Decision
-
-**Recommendation:** Proceed with **Option 1: Supabase-Native**.
-
-### Rationale:
-1. **Clinical Safety & Legal Compliance:** Substance-use disorder data governed by the Kenya Data Protection Act (KDPA 2019) requires zero-trust access control. Supabase RLS enforces data boundaries at the engine level, ensuring a nurse or receptionist can never access unauthorized clinical narratives, even through API manipulation.
-2. **Simplified Operational Footprint:** Calyvia Wellness Center is a healthcare facility, not a tech company. Eliminating the maintenance of an independent NestJS API server simplifies long-term operations and removes single points of failure.
-3. **Synergy with Next.js 14+ App Router:** Using `@supabase/ssr` within Next.js Server Components and Server Actions provides a clean, modern, type-safe architecture without redundant API boilerplate.
-4. **Idempotent Edge Functions for M-Pesa:** Safaricom Daraja STK Push and callback processing map cleanly to Supabase Edge Functions with cryptographically verified payloads and atomic database transactions.
+In this architecture, the backend service boundaries are cleanly separated between application domain orchestration and managed cloud infrastructure:
+- **Database:** Supabase Managed PostgreSQL 16 with Supavisor connection pooling (port 6543 for application queries; port 5432 direct for schema migrations).
+- **Domain API & Clinical Rules:** Existing NestJS 10.3.8 modular monolith (all 28 modules) hosted on AWS App Runner, Render, Railway, or a hardened VPS container.
+- **Data Access:** Prisma ORM connected via Supabase connection pooler with SSL mode enabled.
+- **Authentication & Tokens:** Supabase Auth issues JWT tokens; NestJS `JwtStrategy` validates tokens against the Supabase JWT secret / JWKS endpoint.
+- **Security & Encryption:** Application-layer AES-256-GCM field-level encryption for sensitive psychiatric and demographic data executed in Node.js before database persistence.
+- **File & Document Storage:** Supabase Storage (private S3-compatible buckets for `patient-documents`, `medical-records`, `prescriptions`) accessed via Supabase JavaScript SDK using short-lived signed URLs.
+- **Row Level Security:** Database RLS enabled across all tables with a bypass policy for the authenticated `service_role` utilized by the NestJS backend, plus staff role policies for read-only audits.
+- **External Webhooks & Callbacks:** Safaricom Daraja M-Pesa callbacks and public website enquiries ingested by NestJS integration controllers with atomic Prisma database transactions.
 
 ---
 
-## 5. Architectural Safeguards for Option 1
+### Option B: Supabase-Native Architecture
 
-1. **No Client-Side Secrets:** `SUPABASE_SERVICE_ROLE_KEY` is strictly prohibited in frontend bundles. Only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are exposed to the browser.
-2. **Private Storage by Default:** Patient documents, lab results, and signed consent forms are placed in private buckets accessible only via time-limited signed URLs generated server-side.
-3. **Database-Level Idempotency:** The `mpesa_transactions` table enforces unique constraints on `checkout_request_id` and `mpesa_receipt_number`. Duplicate callbacks will trigger an idempotent acknowledge response without altering balances twice.
-4. **Dev 1 & Dev 3 Sign-Off Gate:** All SQL migrations, RLS policies, and Auth hooks must be peer-reviewed and approved by Dev 1 (Technical Lead). All environment, CI, and backup configurations must be approved by Dev 3 (DevOps/QA).
+In this architecture, the NestJS application server is dismantled:
+- **Client Queries:** Next.js 14 App Router queries Supabase PostgreSQL directly via PostgREST and `@supabase/ssr`.
+- **Authorization:** 100% of authorization is offloaded to PostgreSQL Row Level Security (RLS) policies evaluated on every single SQL query.
+- **Business Logic:** Complex multi-step operations (e.g., CIWA scoring calculation, discharge clearing, M-Pesa payment posting) are rewritten into PostgreSQL Stored Procedures (PL/pgSQL RPCs) or Supabase Edge Functions (Deno).
+- **Background Jobs:** BullMQ queues are replaced by `pg_cron` jobs invoking database functions.
+- **Webhooks:** M-Pesa callbacks and public website lead ingestion are handled via Supabase Edge Functions.
 
 ---
 
-## 6. Next Steps Upon Approval
+## 3. Comparative Evaluation Matrix
 
-1. Initialize `/supabase/` configuration with `config.toml`.
-2. Convert Prisma schema to versioned SQL migrations in `/supabase/migrations/` with RLS policies for P0/P1 tables.
-3. Write pgTAP test suites proving RLS isolation per role.
-4. Integrate `@supabase/ssr` client into `apps/admin` portal.
+| Evaluation Dimension | Option A: Hybrid (Recommended) | Option B: Supabase-Native |
+|:---|:---|:---|
+| **Clinical Safety & Transaction Integrity** | **Superior.** Complex multi-table transactions (e.g., bed allocation transfer, medication administration, financial clearance) run within strict Prisma `$transaction` blocks with compile-time TypeScript type checking. | **High Risk.** Requires rewriting clinical workflows into PL/pgSQL functions or multi-round-trip client operations, increasing concurrency risks. |
+| **KDPA 2019 Field-Level Encryption** | **Proven & Isolated.** Master encryption keys remain strictly inside the backend Node.js memory space. Ciphertext is stored in Postgres. No keys ever touch the frontend. | **Complex.** Encryption must either be performed via browser WebCrypto (exposing keys or complexity), or via `pgcrypto` inside database procedures. |
+| **Monorepo Code Preservation** | **100% Preserved.** All 28 scaffolded and audited NestJS modules, controllers, DTOs, pipes, filters, and unit tests continue functioning without regressions. | **Destructive.** Over 15,000 lines of audited NestJS domain code, unit tests, and validation pipes would need to be rewritten or scrapped. |
+| **M-Pesa Daraja Callback Safety** | **Deterministic & Hardened.** Existing idempotent NestJS webhook handlers process Safaricom IPN callbacks with verified signatures and automated ledger reconciliation. | **Moderate.** Requires authoring and testing Deno Edge Functions, managing secret environments, and handling cold starts. |
+| **4-Week Delivery Timeline** | **Predictable & Low-Risk.** Transitioning the database connection string and storage driver to Supabase requires days, not weeks. Focus remains on UI workflows and clinical features. | **High Schedule Risk.** Complete rewrite of API layer to PostgREST and PL/pgSQL would consume the entire timebox, leaving minimal time for UAT and testing. |
+| **Operational & Hosting Overhead** | **Low.** Supabase manages PostgreSQL, automated daily backups, point-in-time recovery (PITR), and storage. NestJS runs as a single stateless container. | **Very Low.** Serverless execution only; however, maintenance of complex PL/pgSQL procedures transfers to database administrators. |
+| **Future Extensibility** | **High.** Provides an immediate, production-ready foundation, with the freedom to selectively offload individual features (e.g. Realtime bed census, storage uploads) to Supabase natively over time. | **High lock-in.** Heavily coupled to PostgREST conventions and PL/pgSQL logic. |
+
+---
+
+## 4. Decision & Architectural Recommendation
+
+### Recommendation: Proceed with **Option A: Hybrid Architecture**
+
+### Key Rationale:
+1. **Never Trade Clinical Safety for Novelty:** In a psychiatric rehabilitation clinic, bugs in medication administration (e-MAR), detox withdrawal monitoring (CIWA/COWS), or bed double-allocation can result in severe medical harm. The existing NestJS domain logic is type-safe, validated, and verified.
+2. **Regulatory Compliance (KDPA 2019):** Sensitive health information cannot be exposed to client-side vulnerabilities. Keeping field-level encryption (AES-256-GCM) in the backend server guarantees that encryption keys never enter the client runtime.
+3. **Audit Trail Immutability:** The backend `AuditLogInterceptor` records every read and mutation before data reaches the client. This centralized interceptor is significantly more auditable than scattered PostgREST queries.
+4. **Pragmatic Timebox Management:** Developer 2's accountability is to deliver robust UI workflows and end-to-end user journeys (intake $\rightarrow$ admission $\rightarrow$ clinical $\rightarrow$ billing $\rightarrow$ discharge $\rightarrow$ aftercare). Option A delivers a rock-solid, hosted Supabase backend immediately without wasting valuable engineering hours rewriting working code.
+
+---
+
+## 5. Migration Roadmap & Supabase Resource Mapping
+
+Under Option A, the migration steps are executed as follows:
+
+```
++--------------------------------------------------------------------------------+
+|                             Calyvia Cloud Architecture                         |
++--------------------------------------------------------------------------------+
+|                                                                                |
+|   [ Authorized Staff ]                                  [ Public Website ]     |
+|   portal.calyviawellness.co.ke                          calyviawellness.co.ke  |
+|            │                                                     │             |
+|            ▼                                                     ▼             |
+|   +──────────────────────────+                        +─────────────────────+  |
+|   |  Next.js 14 Admin Portal |                        | Website Lead Form   |  |
+|   |  (Vercel / Cloudflare)   |                        +─────────────────────+  |
+|   +─────────────┬────────────+                                   │             |
+|                 │                                                │             |
+|                 ▼                                                ▼             |
+|   +─────────────────────────────────────────────────────────────────────────+  |
+|   |             NestJS API Monolith (App Runner / VPS Container)            |  |
+|   |   - 28 Audited Domain Modules        - AES-256-GCM CryptoService        |  |
+|   |   - Global Audit Interceptor         - Passport JWT / Supabase Auth     |  |
+|   |   - Safaricom Daraja Webhook         - RFC 7807 Error Responses         |  |
+|   +─────────────────────────────────────┬───────────────────────────────────+  |
+|                                         │                                      |
+|                                         ▼ SSL / TLS                            |
+|   +─────────────────────────────────────────────────────────────────────────+  |
+|   |                     Hosted Supabase Platform (AWS eu-west-1)            |  |
+|   |                                                                         |  |
+|   |   [ Supavisor Connection Pooler (Port 6543) ]                           |  |
+|   |        │                                                                |  |
+|   |        ▼                                                                |  |
+|   |   [ PostgreSQL 16 Enterprise Database ]                                 |  |
+|   |        - 41 Relational Tables (01-04 DDL)                               |  |
+|   |        - Row Level Security on 100% of tables (05_rls_policies.sql)     |  |
+|   |        - Automated `updated_at` & Audit Triggers (06_triggers.sql)      |  |
+|   |        - Automated Nightly Backups & Point-In-Time Recovery             |  |
+|   |                                                                         |  |
+|   |   [ Supabase Storage ] (07_storage_buckets.sql)                         |  |
+|   |        - Buckets: patient-documents, medical-records, prescriptions     |  |
+|   |                                                                         |  |
+|   |   [ Supabase Realtime ]                                                 |  |
+|   |        - Real-time Bed Census updates & Critical Vitals Alarms          |  |
+|   +─────────────────────────────────────────────────────────────────────────+  |
+|                                                                                |
++--------------------------------------------------------------------------------+
+```
+
+---
+
+## 6. Review & Sign-Off
+
+- **Dev 2 (Author):** Submitted for Lead Review.
+- **Dev 1 (Technical Lead / Backend):** Review pending.
+- **Dev 3 (QA / DevOps):** Review pending.
