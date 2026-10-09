@@ -19,9 +19,16 @@ export class AppointmentsController {
     return this.appointmentsService.createAppointment(dto);
   }
 
+  @Get()
+  @ApiOperation({ summary: 'List all clinical sessions and appointments' })
+  async getAll() {
+    return this.appointmentsService.getUpcomingAppointments();
+  }
+
   @Get('upcoming')
   @ApiOperation({ summary: 'List upcoming clinical sessions and calendar events' })
   async getUpcoming() {
     return this.appointmentsService.getUpcomingAppointments();
   }
 }
+
