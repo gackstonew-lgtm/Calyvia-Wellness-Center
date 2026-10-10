@@ -35,6 +35,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
+import { useAuth } from './AuthContext';
+import { canAccessModule, ROLE_DISPLAY_NAMES } from '@calyvia/shared';
 
 interface SidebarProps {
   currentModule: string;
@@ -50,6 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
 }) => {
   const { theme } = useTheme();
+  const { user, logout } = useAuth();
 
   const moduleSections = [
     {
@@ -112,12 +115,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
   ];
 
+  const visibleSections = moduleSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => canAccessModule(user?.role, item.id)),
+    }))
+    .filter((section) => section.items.length > 0);
+
   const handleItemClick = (id: string) => {
     onSelectModule(id);
     if (onCloseMobile) {
       onCloseMobile();
     }
   };
+
+  const displayName = user?.fullName || 'Clinical Staff';
+  const roleTitle = user?.role ? (ROLE_DISPLAY_NAMES[user.role] || user.role) : 'Medical Director / Admin';
+  const initials = user?.fullName
+    ? user.fullName
+        .split(' ')
+        .map((n) => n[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : 'DB';
 
   const sidebarContent = (
     <div className="w-72 bg-surface text-foreground h-full flex flex-col border-r border-border select-none overflow-hidden transition-colors duration-200">
@@ -153,7 +175,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Navigation List with rounded pill design inspired by Holistic */}
       <div className="flex-1 overflow-y-auto py-3 px-3 space-y-4 text-xs font-sans">
-        {moduleSections.map((section, idx) => (
+        {visibleSections.map((section, idx) => (
           <div key={idx} className="space-y-1">
             <h2 className="px-3 text-[10px] uppercase font-bold tracking-wider text-muted-foreground/80">
               {section.category}
@@ -189,21 +211,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex items-center justify-between p-2 rounded-xl bg-surface border border-border shadow-xs">
           <div className="flex items-center space-x-2.5 min-w-0">
             <div className="relative w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-xs">
-              <span>DB</span>
+              <span>{initials}</span>
               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-surface" />
             </div>
             <div className="min-w-0">
               <div className="text-xs font-semibold text-foreground truncate flex items-center gap-1">
-                <span>Dr. Antony Baraka</span>
+                <span>{displayName}</span>
               </div>
-              <p className="text-[10px] text-muted-foreground truncate">Medical Director / Admin</p>
+              <p className="text-[10px] text-muted-foreground truncate">{roleTitle}</p>
             </div>
           </div>
           <button
             title="Sign Out"
             aria-label="Sign Out"
-            onClick={() => alert('Authentication session locked. Re-authenticate to access sensitive EMR data.')}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-danger hover:bg-danger-soft transition-colors"
+            onClick={logout}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-danger hover:bg-danger-soft transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
           </button>

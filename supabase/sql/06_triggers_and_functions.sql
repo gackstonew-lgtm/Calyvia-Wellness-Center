@@ -45,6 +45,7 @@ CREATE OR REPLACE FUNCTION public.sync_bed_occupancy()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
     -- If newly allocated and active, set bed to OCCUPIED
@@ -84,6 +85,7 @@ CREATE OR REPLACE FUNCTION public.log_clinical_audit_event()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
     INSERT INTO public.audit_logs (

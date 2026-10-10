@@ -28,20 +28,21 @@ ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value;
 -- ------------------------------------------------------------------------------
 -- 2. Staff Users & Profiles
 -- ------------------------------------------------------------------------------
--- Note: Synthetic bcrypt hash for development password "Calyvia@2026!"
--- $2b$10$wE0v2v8kM2qO/Y8U3YgS0.N4lJ1fP4mY5pQ7rT9vW1xZ3bC5dE7gG
+-- Note: Synthetic Argon2id hash for development/staging password "Clinical#2026"
+-- Generated via argon2.hash('Clinical#2026')
+-- $argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw
 
 INSERT INTO public.users (id, email, password_hash, role, full_name, phone, is_active)
 VALUES 
-    ('10000000-0000-0000-0000-000000000001', 'admin@calyviawellness.co.ke', '$2b$10$wE0v2v8kM2qO/Y8U3YgS0.N4lJ1fP4mY5pQ7rT9vW1xZ3bC5dE7gG', 'SUPER_ADMIN', 'Antony Kariuki', '+254711000001', true),
-    ('10000000-0000-0000-0000-000000000002', 'director@calyviawellness.co.ke', '$2b$10$wE0v2v8kM2qO/Y8U3YgS0.N4lJ1fP4mY5pQ7rT9vW1xZ3bC5dE7gG', 'MEDICAL_DIRECTOR', 'Dr. Margaret Nduta', '+254711000002', true),
-    ('10000000-0000-0000-0000-000000000003', 'doctor@calyviawellness.co.ke', '$2b$10$wE0v2v8kM2qO/Y8U3YgS0.N4lJ1fP4mY5pQ7rT9vW1xZ3bC5dE7gG', 'DOCTOR_PSYCHIATRIST', 'Dr. Faith Mwangi', '+254711000003', true),
-    ('10000000-0000-0000-0000-000000000004', 'nurse@calyviawellness.co.ke', '$2b$10$wE0v2v8kM2qO/Y8U3YgS0.N4lJ1fP4mY5pQ7rT9vW1xZ3bC5dE7gG', 'NURSE', 'Nurse Beatrice Wanjiku', '+254711000004', true),
-    ('10000000-0000-0000-0000-000000000005', 'counsellor@calyviawellness.co.ke', '$2b$10$wE0v2v8kM2qO/Y8U3YgS0.N4lJ1fP4mY5pQ7rT9vW1xZ3bC5dE7gG', 'COUNSELLOR', 'David Ochieng', '+254711000005', true),
-    ('10000000-0000-0000-0000-000000000006', 'pharmacist@calyviawellness.co.ke', '$2b$10$wE0v2v8kM2qO/Y8U3YgS0.N4lJ1fP4mY5pQ7rT9vW1xZ3bC5dE7gG', 'PHARMACIST', 'Mary Njeri', '+254711000006', true),
-    ('10000000-0000-0000-0000-000000000007', 'reception@calyviawellness.co.ke', '$2b$10$wE0v2v8kM2qO/Y8U3YgS0.N4lJ1fP4mY5pQ7rT9vW1xZ3bC5dE7gG', 'ADMISSIONS_FRONT_DESK', 'Grace Achieng', '+254711000007', true),
-    ('10000000-0000-0000-0000-000000000008', 'finance@calyviawellness.co.ke', '$2b$10$wE0v2v8kM2qO/Y8U3YgS0.N4lJ1fP4mY5pQ7rT9vW1xZ3bC5dE7gG', 'FINANCE_BILLING', 'Peter Kimani', '+254711000008', true)
-ON CONFLICT (email) DO NOTHING;
+    ('10000000-0000-0000-0000-000000000001', 'admin@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'SUPER_ADMIN', 'Antony Kariuki', '+254711000001', true),
+    ('10000000-0000-0000-0000-000000000002', 'director@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'MEDICAL_DIRECTOR', 'Dr. Margaret Nduta', '+254711000002', true),
+    ('10000000-0000-0000-0000-000000000003', 'doctor@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'DOCTOR_PSYCHIATRIST', 'Dr. Faith Mwangi', '+254711000003', true),
+    ('10000000-0000-0000-0000-000000000004', 'nurse@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'NURSE', 'Nurse Beatrice Wanjiku', '+254711000004', true),
+    ('10000000-0000-0000-0000-000000000005', 'counsellor@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'COUNSELLOR', 'David Ochieng', '+254711000005', true),
+    ('10000000-0000-0000-0000-000000000006', 'pharmacist@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'PHARMACIST', 'Mary Njeri', '+254711000006', true),
+    ('10000000-0000-0000-0000-000000000007', 'reception@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'ADMISSIONS_FRONT_DESK', 'Grace Achieng', '+254711000007', true),
+    ('10000000-0000-0000-0000-000000000008', 'finance@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'FINANCE_BILLING', 'Peter Kimani', '+254711000008', true)
+ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash;
 
 INSERT INTO public.staff_profiles (id, user_id, national_id_encrypted, department, job_title, license_number, license_board, date_joined)
 VALUES 

@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { Search, Bell, Shield, Sun, Moon, Menu, Settings } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
+import { useAuth } from './AuthContext';
+import { ROLE_DISPLAY_NAMES } from '@calyvia/shared';
 
 interface HeaderProps {
   onToggleMobileMenu?: () => void;
@@ -12,6 +14,19 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onSelectModule }) => {
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
+
+  const displayName = user?.fullName || 'Dr. Baraka';
+  const roleTitle = user?.role ? (ROLE_DISPLAY_NAMES[user.role] || user.role) : 'Medical Director';
+  const initials = user?.fullName
+    ? user.fullName
+        .split(' ')
+        .map((n) => n[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : 'DB';
 
   return (
     <header className="h-16 bg-surface border-b border-border px-4 sm:px-6 flex items-center justify-between shadow-xs z-20 transition-colors duration-200">
@@ -92,20 +107,20 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onSelectModu
           )}
         </div>
 
-        {/* DB Dr. Baraka Medical Director button with Theme and Settings inserted inside */}
+        {/* Authenticated Staff Pill with Theme and Settings inserted inside */}
         <div className="flex items-center space-x-2.5 bg-surface border border-border rounded-2xl p-1.5 pl-2 sm:pl-2.5 shadow-xs transition-colors">
           {/* Avatar & Staff Identity */}
           <div className="flex items-center space-x-2 sm:space-x-2.5 pr-1 sm:pr-2">
             <div className="relative w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shadow-xs flex-shrink-0">
-              <span>DB</span>
+              <span>{initials}</span>
               <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border-2 border-surface" />
             </div>
-            <div className="hidden sm:block text-left">
-              <div className="font-semibold text-foreground leading-tight flex items-center space-x-1">
-                <span>Dr. Baraka</span>
-                <Shield className="w-3 h-3 text-secondary" />
+            <div className="hidden sm:block text-left max-w-[140px]">
+              <div className="font-semibold text-foreground leading-tight flex items-center space-x-1 truncate">
+                <span className="truncate">{displayName}</span>
+                <Shield className="w-3 h-3 text-secondary flex-shrink-0" />
               </div>
-              <div className="text-[10px] text-muted-foreground">Medical Director</div>
+              <div className="text-[10px] text-muted-foreground truncate">{roleTitle}</div>
             </div>
           </div>
 
@@ -143,3 +158,4 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onSelectModu
     </header>
   );
 };
+

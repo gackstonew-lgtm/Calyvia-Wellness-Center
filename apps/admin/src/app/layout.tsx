@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import '../styles/globals.css';
 import { ThemeProvider } from '../components/ThemeProvider';
-import { CalyviaAiAssistant } from '../components/CalyviaAiAssistant';
-import { PwaInstallBanner } from '../components/PwaInstallBanner';
+import { AuthProvider } from '../components/AuthContext';
+import { ClientShell } from '../components/ClientShell';
 
 export const metadata: Metadata = {
   title: 'Calyvia Wellness Center | Clinic Management System',
@@ -40,10 +40,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <meta name="theme-color" content="#059669" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+      <body className="bg-background text-foreground min-h-screen antialiased flex flex-col font-sans transition-colors duration-200">
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -62,12 +59,11 @@ export default function RootLayout({
             `,
           }}
         />
-      </head>
-      <body className="bg-background text-foreground min-h-screen antialiased flex flex-col font-sans transition-colors duration-200">
         <ThemeProvider>
-          {children}
-          <PwaInstallBanner />
-          <CalyviaAiAssistant />
+          <AuthProvider>
+            {children}
+            <ClientShell />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
