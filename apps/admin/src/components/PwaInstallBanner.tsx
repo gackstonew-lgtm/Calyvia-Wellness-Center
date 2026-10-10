@@ -27,29 +27,49 @@ export const PwaInstallBanner: React.FC = () => {
   const [installedSuccess, setInstalledSuccess] = useState<boolean>(false);
 
   useEffect(() => {
-    // 1. Register Service Worker in supported production/secure environments
+    // 1. Register Service Worker in production HTTPS environments; purge on localhost to protect HMR/Webpack
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker
-          .register('/sw.js', { scope: '/' })
-          .then((reg) => {
-            // Check for updates
-            reg.onupdatefound = () => {
-              const installingWorker = reg.installing;
-              if (installingWorker) {
-                installingWorker.onstatechange = () => {
-                  if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    // New content is available
-                    console.log('[SW] New version available. Reload to update.');
-                  }
-                };
-              }
-            };
-          })
-          .catch((err) => {
-            console.warn('[SW] Registration notice:', err);
+      const isLocalhost =
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname.endsWith('.local');
+
+      if (isLocalhost) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (const registration of registrations) {
+            registration.unregister();
+          }
+        });
+        if ('caches' in window) {
+          caches.keys().then((names) => {
+            for (const name of names) {
+              caches.delete(name);
+            }
           });
-      });
+        }
+      } else {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js', { scope: '/' })
+            .then((reg) => {
+              // Check for updates
+              reg.onupdatefound = () => {
+                const installingWorker = reg.installing;
+                if (installingWorker) {
+                  installingWorker.onstatechange = () => {
+                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                      // New content is available
+                      console.log('[SW] New version available. Reload to update.');
+                    }
+                  };
+                }
+              };
+            })
+            .catch((err) => {
+              console.warn('[SW] Registration notice:', err);
+            });
+        });
+      }
     }
 
     // 2. Check if already running in standalone (installed) mode

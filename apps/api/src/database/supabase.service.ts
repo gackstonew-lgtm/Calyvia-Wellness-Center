@@ -1,6 +1,8 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { Pool, PoolClient } from 'pg';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
 // Table name mappings
 const MODEL_TABLE_MAP: Record<string, string> = {
@@ -349,6 +351,14 @@ export class SupabaseService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     if (SupabaseService.isConnected) {
       return;
+    }
+
+    if (!process.env.DATABASE_URL) {
+      dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+      dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
+      dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+      dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+      dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
     }
 
     const rawConnectionString = process.env.DATABASE_URL || '';

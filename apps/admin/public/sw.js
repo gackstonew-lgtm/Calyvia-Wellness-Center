@@ -3,7 +3,7 @@
 // App Shell & Static Asset Caching Engine
 // ========================================================
 
-const CACHE_NAME = 'calyvia-shell-v1.0.0';
+const CACHE_NAME = 'calyvia-shell-v2.0.0';
 
 // Critical static app shell assets (safe for public caching)
 const PRECACHE_ASSETS = [
@@ -61,24 +61,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. CRITICAL HEALTHCARE SECURITY BOUNDARY:
-  // Strictly NEVER cache API requests, Supabase database queries, or auth tokens!
-  // Any medical records, patients, or vitals must always be fetched live.
+  // 2. CRITICAL BOUNDARY: NEVER intercept API, auth, or Next.js build chunks
+  // Next.js chunks are immutable & version-controlled by Next.js's runtime.
+  // Bypassing SW prevents Webpack chunk mismatch and 'undefined (reading call)' faults.
   if (
     url.pathname.startsWith('/api/') ||
     url.pathname.includes('/auth') ||
+    url.pathname.startsWith('/_next/') ||
     url.hostname.includes('supabase.co') ||
     url.hostname.includes('pooler.supabase.com')
   ) {
     return; // Direct network fetch, no cache
   }
 
-  // 3. STATIC ASSETS (_next/static, /icons, /brand): Cache-first with network fallback
+  // 3. STATIC BRAND ASSETS (/icons, /brand, /favicon.svg): Cache-first with network fallback
   if (
-    url.pathname.startsWith('/_next/static/') ||
     url.pathname.startsWith('/icons/') ||
     url.pathname.startsWith('/brand/') ||
-    url.pathname === '/favicon.svg'
+    url.pathname === '/favicon.svg' ||
+    url.pathname === '/apple-touch-icon.png'
   ) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
