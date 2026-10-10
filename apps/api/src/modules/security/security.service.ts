@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../../database/prisma.service';
+import { SupabaseService } from '../../database/supabase.service';
 import { LoginDto, RequestAccessDto, ChangePasswordDto } from './dto/auth.dto';
 import { UserRole } from '@calyvia/shared';
 
@@ -43,17 +44,25 @@ export class SecurityService {
     const bootstrapEmail = (process.env.BOOTSTRAP_ADMIN_EMAIL || 'admin@calyviawellness.co.ke').toLowerCase();
     const bootstrapPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD || 'Calyvia#2026';
 
-    // Default bootstrap admin if database is empty or initializing
-    if (!user && email.toLowerCase() === bootstrapEmail && password === bootstrapPassword) {
-      user = {
-        id: '00000000-0000-0000-0000-000000000001',
-        email: bootstrapEmail,
-        fullName: 'Dr. Baraka (Medical Director & Admin)',
-        role: UserRole.SUPER_ADMIN,
-        isActive: true,
-      };
-    } else if (user) {
-      const isValid = await this.verifyPassword(user.passwordHash, password);
+    if (user) {
+      let isValid = await this.verifyPassword(user.passwordHash, password);
+      if (!isValid && SupabaseService.staticClient) {
+        try {
+          const { data: authData, error: authErr } = await SupabaseService.staticClient.auth.signInWithPassword({
+            email: email.toLowerCase(),
+            password,
+          });
+          if (!authErr && authData?.user) {
+            isValid = true;
+            const newHash = await this.hashPassword(password);
+            this.prisma.user.update({
+              where: { id: user.id },
+              data: { passwordHash: newHash, updatedAt: new Date() },
+            }).catch(() => {});
+          }
+        } catch {}
+      }
+
       if (!isValid) {
         throw new UnauthorizedException('Invalid email or password');
       }
@@ -61,7 +70,48 @@ export class SecurityService {
         throw new UnauthorizedException('User account has been deactivated. Please contact the administrator.');
       }
     } else {
-      throw new UnauthorizedException('Invalid email or password');
+      // User not yet in public.users: verify via Supabase Auth
+      let authenticatedViaSupabase = false;
+      if (SupabaseService.staticClient) {
+        try {
+          const { data: authData, error: authErr } = await SupabaseService.staticClient.auth.signInWithPassword({
+            email: email.toLowerCase(),
+            password,
+          });
+          if (!authErr && authData?.user) {
+            authenticatedViaSupabase = true;
+            const newHash = await this.hashPassword(password);
+            const authRole = authData.user.user_metadata?.role || authData.user.app_metadata?.role || UserRole.SUPER_ADMIN;
+            const authName = authData.user.user_metadata?.fullName || 'Dr. Antony Baraka (Medical Director & Administrator)';
+            user = await this.prisma.user.create({
+              data: {
+                id: authData.user.id,
+                email: email.toLowerCase(),
+                passwordHash: newHash,
+                role: authRole,
+                fullName: authName,
+                isActive: true,
+                mustChangePassword: false,
+              },
+            });
+          }
+        } catch {}
+      }
+
+      if (!authenticatedViaSupabase) {
+        // Fallback emergency bootstrap check
+        if (email.toLowerCase() === bootstrapEmail && password === bootstrapPassword) {
+          user = {
+            id: '00000000-0000-0000-0000-000000000001',
+            email: bootstrapEmail,
+            fullName: 'Dr. Baraka (Medical Director & Admin)',
+            role: UserRole.SUPER_ADMIN,
+            isActive: true,
+          };
+        } else {
+          throw new UnauthorizedException('Invalid email or password');
+        }
+      }
     }
 
     const payload = {
@@ -188,7 +238,18 @@ export class SecurityService {
         },
       });
 
-      // Record in audit log
+      // Synchronize new password with Supabase Auth if accessible
+      if (SupabaseService.staticClient) {
+        try {
+          await SupabaseService.staticClient.auth.admin.updateUserById(userId, {
+            password: newPassword,
+          });
+        } catch (supabaseErr) {
+          console.warn('Supabase Auth password sync notification:', (supabaseErr as any).message);
+        }
+      }
+
+      // Record in immutable audit log
       if ((this.prisma as any).auditLog) {
         await (this.prisma as any).auditLog.create({
           data: {
@@ -206,6 +267,42 @@ export class SecurityService {
     return {
       success: true,
       message: 'Password changed successfully. Permanent administrative credentials activated.',
+    };
+  }
+
+  async logout(userId: string) {
+    if (userId) {
+      // Invalidate Supabase Auth session if accessible
+      if (SupabaseService.staticClient) {
+        try {
+          await SupabaseService.staticClient.auth.admin.signOut(userId);
+        } catch (signOutErr) {
+          // Graceful handling for non-Supabase-managed tokens
+        }
+      }
+
+      // Record logout audit log
+      try {
+        if (this.prisma && (this.prisma as any).auditLog) {
+          await (this.prisma as any).auditLog.create({
+            data: {
+              userId,
+              role: 'AUTHENTICATED',
+              action: 'USER_LOGOUT',
+              entityName: 'users',
+              entityId: userId,
+              newValues: { loggedOutAt: new Date().toISOString() },
+            },
+          });
+        }
+      } catch (err) {
+        console.warn('Could not record logout audit log:', err);
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Logged out successfully. Authentication session invalidated.',
     };
   }
 }

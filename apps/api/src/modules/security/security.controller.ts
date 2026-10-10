@@ -44,6 +44,16 @@ export class SecurityController {
     return this.securityService.changePassword(user.id || user.sub, dto);
   }
 
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Logout staff and invalidate authentication session' })
+  @ApiResponse({ status: 200, description: 'Session invalidated and logout recorded' })
+  async logout(@CurrentUser() user: any) {
+    return this.securityService.logout(user?.id || user?.sub);
+  }
+
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

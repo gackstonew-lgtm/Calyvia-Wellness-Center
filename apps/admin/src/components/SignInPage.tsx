@@ -64,7 +64,7 @@ export const SignInPage: React.FC = () => {
     }
 
     setIsSubmitting(true);
-    const res = await login(email, password);
+    const res = await login(email, password, rememberMe);
     setIsSubmitting(false);
 
     if (!res.success) {

@@ -155,7 +155,9 @@ Please provide parameters or set environment variables:
         }
       } else {
         isNewUser = true;
-        userId = '10000000-0000-0000-0000-000000000001';
+        // Synchronize with existing Supabase auth.users UID if available to guarantee unified identity
+        const authUserCheck = await client.query('SELECT id FROM auth.users WHERE email = $1', [email]);
+        userId = authUserCheck.rows.length > 0 ? authUserCheck.rows[0].id : '10000000-0000-0000-0000-000000000001';
         console.log(`[Calyvia Provisioning] Registering new primary SUPER_ADMIN user (${userId})...`);
         await client.query(
           `INSERT INTO public.users (id, email, password_hash, role, full_name, phone, is_active, must_change_password)

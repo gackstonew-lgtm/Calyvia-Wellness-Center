@@ -292,6 +292,10 @@ export class SupabaseService implements OnModuleInit, OnModuleDestroy {
     return SupabaseService.clientInstance!;
   }
 
+  public static get staticClient(): SupabaseClient | null {
+    return SupabaseService.clientInstance;
+  }
+
   public get pool(): Pool {
     return SupabaseService.poolInstance!;
   }
