@@ -99,8 +99,13 @@ export const CalyviaAiAssistant: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Call backend API
-      const res = await fetch('http://localhost:4000/api/v1/ai-extension/chat', {
+      // Call backend API (uses NEXT_PUBLIC_API_URL with localhost fallback for local development)
+      const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const apiEndpoint = configuredApiUrl.endsWith('/api/v1')
+        ? `${configuredApiUrl}/ai-extension/chat`
+        : `${configuredApiUrl.replace(/\/$/, '')}/api/v1/ai-extension/chat`;
+
+      const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

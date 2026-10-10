@@ -1,0 +1,45 @@
+# ========================================================
+# CALYVIA WELLNESS CENTER — NETLIFY DEPLOYMENT CONFIGURATION
+# Frontend Workspace: apps/admin (Next.js 14 App Router)
+# Shared Workspace: packages/shared (TypeScript Contracts)
+# ========================================================
+
+[build]
+  # Builds shared library then admin Next.js application
+  command = "npm run build:admin"
+  publish = "apps/admin/.next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# Next.js Runtime Plugin for App Router on Netlify
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Security & Compliance Headers (KDPA 2019 / HIPAA / OWASP)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Cache Optimization for Next.js Static Chunks
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache Optimization for Brand Logos & SVGs
+[[headers]]
+  for = "/brand/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/favicon.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"

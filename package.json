@@ -12,6 +12,7 @@
     "dev:api": "npm run dev --workspace=@calyvia/api",
     "dev:admin": "npm run dev --workspace=@calyvia/admin",
     "build": "npm run build --workspaces --if-present",
+    "build:admin": "npm run build --workspace=@calyvia/shared && npm run build --workspace=@calyvia/admin",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
   },
