@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import '../styles/globals.css';
 import { ThemeProvider } from '../components/ThemeProvider';
+import { AuthProvider } from '../components/AuthContext';
 import { CalyviaAiAssistant } from '../components/CalyviaAiAssistant';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
 
@@ -60,9 +61,11 @@ export default function RootLayout({
           }}
         />
         <ThemeProvider>
-          {children}
-          <PwaInstallBanner />
-          <CalyviaAiAssistant />
+          <AuthProvider>
+            {children}
+            <PwaInstallBanner />
+            <CalyviaAiAssistant />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

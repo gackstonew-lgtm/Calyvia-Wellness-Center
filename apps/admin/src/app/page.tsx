@@ -51,13 +51,27 @@ import {
   Smile,
   Webhook,
   Zap,
+  ShieldAlert,
 } from 'lucide-react';
+import { useAuth } from '../components/AuthContext';
+import { SignInPage } from '../components/SignInPage';
+import { canAccessModule, getDefaultModuleForRole, ROLE_DISPLAY_NAMES } from '@calyvia/shared';
 
 export default function AdminDashboardPage() {
+  const { user, isLoading, defaultModule } = useAuth();
   const [activeModule, setActiveModule] = useState<string>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<number>(10);
   const [trendView, setTrendView] = useState<'weekly' | 'monthly'>('weekly');
+
+  // Synchronize active module with authorized role defaults
+  useEffect(() => {
+    if (user && defaultModule) {
+      if (!canAccessModule(user.role, activeModule)) {
+        setActiveModule(defaultModule);
+      }
+    }
+  }, [user, defaultModule]);
 
   // M-Pesa STK Push state for billing demo
   const [stkPhoneNumber, setStkPhoneNumber] = useState<string>('254712345678');
@@ -250,6 +264,21 @@ export default function AdminDashboardPage() {
     { day: 31, hasEvent: false },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4 select-none">
+        <div className="w-14 h-14 rounded-2xl bg-primary-soft border border-primary/20 flex items-center justify-center animate-pulse shadow-xs">
+          <img src="/brand/calyvia-emblem-light.svg" alt="Calyvia" className="w-8 h-8 object-contain" />
+        </div>
+        <p className="text-xs text-muted-foreground font-medium animate-pulse">Verifying Calyvia Clinical Session...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <SignInPage />;
+  }
+
   return (
     <div className="flex h-screen bg-background overflow-hidden text-foreground transition-colors duration-200">
       {/* Sidebar navigation with mobile drawer support */}
@@ -284,7 +313,7 @@ export default function AdminDashboardPage() {
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground font-sans mt-0.5">
                 {activeModule === 'dashboard'
-                  ? `${greeting.salutation}, Dr. Antony Baraka. ${greeting.message}`
+                  ? `${greeting.salutation}, ${user.fullName}. ${greeting.message}`
                   : `Calyvia Wellness Center • Enterprise HMIS / EMR System`}
               </p>
             </div>
@@ -308,8 +337,34 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
+          {/* Access Control Barrier: Enforce Role Authorization for Module */}
+          {!canAccessModule(user.role, activeModule) && (
+            <div className="p-8 max-w-lg mx-auto text-center space-y-4 bg-surface border border-border rounded-3xl mt-8 shadow-elevated animate-in fade-in zoom-in-95 duration-150">
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-danger-soft border border-danger/20 flex items-center justify-center text-danger">
+                <ShieldAlert className="w-8 h-8" />
+              </div>
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-mono uppercase font-bold text-danger tracking-wider">
+                  Access Restricted • Least-Privilege Protection
+                </span>
+                <h2 className="text-lg font-bold text-foreground">Insufficient Role Privileges</h2>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Your authenticated institutional role (<span className="font-semibold text-foreground">{ROLE_DISPLAY_NAMES[user.role] || user.role}</span>) does not have authorized clearance to access the <span className="font-mono text-primary font-semibold">{activeModule}</span> workspace.
+                </p>
+              </div>
+              <div className="pt-2">
+                <button
+                  onClick={() => setActiveModule(getDefaultModuleForRole(user.role))}
+                  className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary-hover shadow-xs transition-all active:scale-[0.98]"
+                >
+                  Return to Authorized Workspace
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Module: Dashboard & Management Overview */}
-          {activeModule === 'dashboard' && (
+          {activeModule === 'dashboard' && canAccessModule(user.role, 'dashboard') && (
             <div className="space-y-6">
               {/* 4 Metric Overview Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

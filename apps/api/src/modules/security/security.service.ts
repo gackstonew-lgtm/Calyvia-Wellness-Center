@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../../database/prisma.service';
-import { LoginDto } from './dto/auth.dto';
+import { LoginDto, RequestAccessDto } from './dto/auth.dto';
 import { UserRole } from '@calyvia/shared';
 
 @Injectable()
@@ -40,11 +40,14 @@ export class SecurityService {
       console.warn('Database user lookup failed, falling back to bootstrap admin credentials');
     }
 
+    const bootstrapEmail = (process.env.BOOTSTRAP_ADMIN_EMAIL || 'admin@calyviawellness.co.ke').toLowerCase();
+    const bootstrapPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD || 'Calyvia#2026';
+
     // Default bootstrap admin if database is empty or initializing
-    if (!user && email.toLowerCase() === 'admin@calyviawellness.co.ke' && password === 'Calyvia#2026') {
+    if (!user && email.toLowerCase() === bootstrapEmail && password === bootstrapPassword) {
       user = {
         id: '00000000-0000-0000-0000-000000000001',
-        email: 'admin@calyviawellness.co.ke',
+        email: bootstrapEmail,
         fullName: 'Dr. Baraka (Medical Director & Admin)',
         role: UserRole.SUPER_ADMIN,
         isActive: true,
@@ -55,7 +58,7 @@ export class SecurityService {
         throw new UnauthorizedException('Invalid email or password');
       }
       if (!user.isActive) {
-        throw new UnauthorizedException('User account has been deactivated');
+        throw new UnauthorizedException('User account has been deactivated. Please contact the administrator.');
       }
     } else {
       throw new UnauthorizedException('Invalid email or password');
@@ -122,4 +125,27 @@ export class SecurityService {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }
+
+  async requestAccess(dto: RequestAccessDto) {
+    try {
+      if (this.prisma && (this.prisma as any).staffTask) {
+        await (this.prisma as any).staffTask.create({
+          data: {
+            title: `Staff Access Request: ${dto.fullName} (${dto.department})`,
+            description: `Email: ${dto.email}, Phone: ${dto.phone}, Title: ${dto.jobTitle}. Justification: ${dto.justification}`,
+            priority: 'HIGH',
+            status: 'PENDING',
+          },
+        });
+      }
+    } catch (err) {
+      console.warn('Could not record access request into staff task queue:', err);
+    }
+
+    return {
+      success: true,
+      message: 'Access request submitted successfully. A Calyvia facility administrator will review your credentials and verify institutional authorization.',
+    };
+  }
 }
+

@@ -186,3 +186,210 @@ export class KenyaUtils {
     return `${firstTwo}${'*'.repeat(Math.max(id.length - 4, 3))}${lastTwo}`;
   }
 }
+
+// ==============================================================================
+// Fine-Grained Permissions Model & Institutional Role-Based Access Control
+// ==============================================================================
+
+export enum Permission {
+  // Executive & Oversight
+  DASHBOARD_VIEW = 'dashboard.view',
+  REPORTS_FINANCIAL_VIEW = 'reports.financial.view',
+  REPORTS_CLINICAL_VIEW = 'reports.clinical.view',
+  REPORTS_EXECUTIVE_VIEW = 'reports.executive.view',
+
+  // Patient Intake & Demographics
+  PATIENTS_VIEW = 'patients.view',
+  PATIENTS_CREATE = 'patients.create',
+  PATIENTS_UPDATE = 'patients.update',
+  PATIENTS_ARCHIVE = 'patients.archive',
+  CRM_LEADS_MANAGE = 'crm.leads.manage',
+  DOCUMENTS_MANAGE = 'documents.manage',
+  FAMILY_MANAGE = 'family.manage',
+  REFERRALS_MANAGE = 'referrals.manage',
+
+  // Clinical & Inpatient Care
+  CLINICAL_RECORDS_VIEW = 'clinical_records.view',
+  CLINICAL_RECORDS_CREATE = 'clinical_records.create',
+  CLINICAL_RECORDS_UPDATE = 'clinical_records.update',
+  DETOX_MANAGE = 'detox.manage',
+  COUNSELLING_MANAGE = 'counselling.manage',
+  APPOINTMENTS_VIEW = 'appointments.view',
+  APPOINTMENTS_MANAGE = 'appointments.manage',
+  PHARMACY_VIEW = 'pharmacy.view',
+  PHARMACY_DISPENSE = 'pharmacy.dispense',
+  ROOMS_BEDS_MANAGE = 'rooms_beds.manage',
+
+  // Financial & Billing (Cashier scope)
+  BILLING_VIEW = 'billing.view',
+  BILLING_PAYMENT_CREATE = 'billing.payment.create',
+  BILLING_INVOICE_CREATE = 'billing.invoice.create',
+  BILLING_REFUND_APPROVE = 'billing.refund.approve',
+
+  // Operations, Governance & Security
+  MOVEMENT_LOG_MANAGE = 'movement.log.manage',
+  INCIDENTS_MANAGE = 'incidents.manage',
+  STAFF_VIEW = 'staff.view',
+  STAFF_MANAGE = 'staff.manage',
+  TASKS_MANAGE = 'tasks.manage',
+  INVENTORY_MANAGE = 'inventory.manage',
+  DISCHARGE_MANAGE = 'discharge.manage',
+  AFTERCARE_MANAGE = 'aftercare.manage',
+  COMMUNICATION_MANAGE = 'communication.manage',
+  FEEDBACK_MANAGE = 'feedback.manage',
+  SECURITY_AUDIT_VIEW = 'security.audit.view',
+  SYSTEM_SETTINGS_MANAGE = 'system_settings.manage',
+  INTEGRATIONS_MANAGE = 'integrations.manage',
+  AI_COPILOT_USE = 'ai_copilot.use',
+}
+
+export const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
+  [UserRole.SUPER_ADMIN]: 'System Administrator',
+  [UserRole.FACILITY_ADMIN]: 'Facility Administrator',
+  [UserRole.MEDICAL_DIRECTOR]: 'Medical Director',
+  [UserRole.DOCTOR_PSYCHIATRIST]: 'Consultant Psychiatrist / Doctor',
+  [UserRole.NURSE]: 'Nursing Officer',
+  [UserRole.COUNSELLOR]: 'Addiction Counsellor & Therapist',
+  [UserRole.PHARMACIST]: 'Clinical Pharmacist',
+  [UserRole.ADMISSIONS_FRONT_DESK]: 'Reception & Admissions Officer',
+  [UserRole.FINANCE_BILLING]: 'Cashier & Billing Officer',
+  [UserRole.INVENTORY_STORE]: 'Stores & Inventory Officer',
+  [UserRole.MANAGEMENT_EXECUTIVE]: 'Management Executive',
+};
+
+export const ROLE_MODULE_ACCESS: Record<UserRole, string[]> = {
+  [UserRole.SUPER_ADMIN]: [
+    'dashboard', 'reports', 'patients', 'crm', 'family', 'referrals', 'documents',
+    'clinical', 'detox', 'counselling', 'appointments', 'pharmacy', 'rooms',
+    'billing', 'movement', 'incidents', 'staff', 'tasks', 'inventory',
+    'discharge', 'aftercare', 'communication', 'feedback',
+    'security', 'system_admin', 'integrations', 'automation', 'ai_extension'
+  ],
+  [UserRole.FACILITY_ADMIN]: [
+    'dashboard', 'reports', 'patients', 'crm', 'family', 'referrals', 'documents',
+    'billing', 'movement', 'incidents', 'staff', 'tasks', 'inventory',
+    'discharge', 'aftercare', 'communication', 'feedback',
+    'security', 'system_admin', 'integrations', 'automation', 'ai_extension'
+  ],
+  [UserRole.MEDICAL_DIRECTOR]: [
+    'dashboard', 'reports', 'patients', 'clinical', 'detox', 'counselling',
+    'appointments', 'pharmacy', 'rooms', 'incidents', 'staff', 'discharge',
+    'aftercare', 'security', 'ai_extension'
+  ],
+  [UserRole.DOCTOR_PSYCHIATRIST]: [
+    'dashboard', 'patients', 'clinical', 'detox', 'counselling',
+    'appointments', 'pharmacy', 'rooms', 'discharge', 'aftercare',
+    'incidents', 'ai_extension'
+  ],
+  [UserRole.NURSE]: [
+    'dashboard', 'patients', 'clinical', 'detox', 'pharmacy',
+    'appointments', 'rooms', 'movement', 'incidents', 'tasks'
+  ],
+  [UserRole.COUNSELLOR]: [
+    'dashboard', 'patients', 'counselling', 'appointments',
+    'discharge', 'aftercare', 'feedback', 'tasks'
+  ],
+  [UserRole.PHARMACIST]: [
+    'dashboard', 'pharmacy', 'inventory', 'patients', 'tasks'
+  ],
+  [UserRole.ADMISSIONS_FRONT_DESK]: [
+    'dashboard', 'patients', 'crm', 'appointments', 'rooms',
+    'movement', 'documents', 'feedback', 'tasks'
+  ],
+  // Cashier / Billing Officer: STRICTLY finance, billing, authorized reports, and tasks.
+  // Clinical records, detox, notes, and admin are strictly prohibited.
+  [UserRole.FINANCE_BILLING]: [
+    'billing', 'reports', 'tasks'
+  ],
+  [UserRole.INVENTORY_STORE]: [
+    'inventory', 'pharmacy', 'tasks'
+  ],
+  [UserRole.MANAGEMENT_EXECUTIVE]: [
+    'dashboard', 'reports', 'crm', 'billing', 'feedback', 'incidents'
+  ],
+};
+
+export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
+  [UserRole.SUPER_ADMIN]: Object.values(Permission),
+  [UserRole.FACILITY_ADMIN]: [
+    Permission.DASHBOARD_VIEW, Permission.REPORTS_EXECUTIVE_VIEW, Permission.REPORTS_FINANCIAL_VIEW,
+    Permission.PATIENTS_VIEW, Permission.PATIENTS_CREATE, Permission.PATIENTS_UPDATE,
+    Permission.CRM_LEADS_MANAGE, Permission.DOCUMENTS_MANAGE, Permission.FAMILY_MANAGE, Permission.REFERRALS_MANAGE,
+    Permission.BILLING_VIEW, Permission.BILLING_PAYMENT_CREATE, Permission.BILLING_INVOICE_CREATE, Permission.BILLING_REFUND_APPROVE,
+    Permission.MOVEMENT_LOG_MANAGE, Permission.INCIDENTS_MANAGE, Permission.STAFF_VIEW, Permission.STAFF_MANAGE,
+    Permission.TASKS_MANAGE, Permission.INVENTORY_MANAGE, Permission.DISCHARGE_MANAGE, Permission.AFTERCARE_MANAGE,
+    Permission.COMMUNICATION_MANAGE, Permission.FEEDBACK_MANAGE, Permission.SECURITY_AUDIT_VIEW,
+    Permission.SYSTEM_SETTINGS_MANAGE, Permission.INTEGRATIONS_MANAGE, Permission.AI_COPILOT_USE,
+  ],
+  [UserRole.MEDICAL_DIRECTOR]: [
+    Permission.DASHBOARD_VIEW, Permission.REPORTS_CLINICAL_VIEW, Permission.REPORTS_EXECUTIVE_VIEW,
+    Permission.PATIENTS_VIEW, Permission.CLINICAL_RECORDS_VIEW, Permission.CLINICAL_RECORDS_CREATE, Permission.CLINICAL_RECORDS_UPDATE,
+    Permission.DETOX_MANAGE, Permission.COUNSELLING_MANAGE, Permission.APPOINTMENTS_VIEW, Permission.APPOINTMENTS_MANAGE,
+    Permission.PHARMACY_VIEW, Permission.ROOMS_BEDS_MANAGE, Permission.INCIDENTS_MANAGE, Permission.STAFF_VIEW,
+    Permission.DISCHARGE_MANAGE, Permission.AFTERCARE_MANAGE, Permission.SECURITY_AUDIT_VIEW, Permission.AI_COPILOT_USE,
+  ],
+  [UserRole.DOCTOR_PSYCHIATRIST]: [
+    Permission.DASHBOARD_VIEW, Permission.PATIENTS_VIEW, Permission.PATIENTS_UPDATE,
+    Permission.CLINICAL_RECORDS_VIEW, Permission.CLINICAL_RECORDS_CREATE, Permission.CLINICAL_RECORDS_UPDATE,
+    Permission.DETOX_MANAGE, Permission.APPOINTMENTS_VIEW, Permission.APPOINTMENTS_MANAGE,
+    Permission.PHARMACY_VIEW, Permission.ROOMS_BEDS_MANAGE, Permission.DISCHARGE_MANAGE,
+    Permission.AFTERCARE_MANAGE, Permission.INCIDENTS_MANAGE, Permission.AI_COPILOT_USE,
+  ],
+  [UserRole.NURSE]: [
+    Permission.DASHBOARD_VIEW, Permission.PATIENTS_VIEW,
+    Permission.CLINICAL_RECORDS_VIEW, Permission.CLINICAL_RECORDS_CREATE,
+    Permission.DETOX_MANAGE, Permission.PHARMACY_VIEW, Permission.PHARMACY_DISPENSE,
+    Permission.APPOINTMENTS_VIEW, Permission.ROOMS_BEDS_MANAGE, Permission.MOVEMENT_LOG_MANAGE,
+    Permission.INCIDENTS_MANAGE, Permission.TASKS_MANAGE,
+  ],
+  [UserRole.COUNSELLOR]: [
+    Permission.DASHBOARD_VIEW, Permission.PATIENTS_VIEW, Permission.COUNSELLING_MANAGE,
+    Permission.APPOINTMENTS_VIEW, Permission.DISCHARGE_MANAGE, Permission.AFTERCARE_MANAGE,
+    Permission.FEEDBACK_MANAGE, Permission.TASKS_MANAGE,
+  ],
+  [UserRole.PHARMACIST]: [
+    Permission.DASHBOARD_VIEW, Permission.PATIENTS_VIEW, Permission.PHARMACY_VIEW,
+    Permission.PHARMACY_DISPENSE, Permission.INVENTORY_MANAGE, Permission.TASKS_MANAGE,
+  ],
+  [UserRole.ADMISSIONS_FRONT_DESK]: [
+    Permission.DASHBOARD_VIEW, Permission.PATIENTS_VIEW, Permission.PATIENTS_CREATE, Permission.PATIENTS_UPDATE,
+    Permission.CRM_LEADS_MANAGE, Permission.APPOINTMENTS_VIEW, Permission.APPOINTMENTS_MANAGE,
+    Permission.ROOMS_BEDS_MANAGE, Permission.MOVEMENT_LOG_MANAGE, Permission.DOCUMENTS_MANAGE,
+    Permission.FEEDBACK_MANAGE, Permission.TASKS_MANAGE,
+  ],
+  [UserRole.FINANCE_BILLING]: [
+    Permission.BILLING_VIEW, Permission.BILLING_PAYMENT_CREATE, Permission.BILLING_INVOICE_CREATE,
+    Permission.REPORTS_FINANCIAL_VIEW, Permission.TASKS_MANAGE,
+  ],
+  [UserRole.INVENTORY_STORE]: [
+    Permission.INVENTORY_MANAGE, Permission.PHARMACY_VIEW, Permission.TASKS_MANAGE,
+  ],
+  [UserRole.MANAGEMENT_EXECUTIVE]: [
+    Permission.DASHBOARD_VIEW, Permission.REPORTS_EXECUTIVE_VIEW, Permission.REPORTS_FINANCIAL_VIEW,
+    Permission.REPORTS_CLINICAL_VIEW, Permission.CRM_LEADS_MANAGE, Permission.BILLING_VIEW,
+    Permission.FEEDBACK_MANAGE, Permission.INCIDENTS_MANAGE,
+  ],
+};
+
+export function canAccessModule(role: UserRole | string | undefined, moduleId: string): boolean {
+  if (!role) return false;
+  const allowed = ROLE_MODULE_ACCESS[role as UserRole];
+  if (!allowed) return false;
+  return allowed.includes(moduleId);
+}
+
+export function hasPermission(role: UserRole | string | undefined, permission: Permission): boolean {
+  if (!role) return false;
+  const permissions = ROLE_PERMISSIONS[role as UserRole];
+  if (!permissions) return false;
+  return permissions.includes(permission);
+}
+
+export function getDefaultModuleForRole(role: UserRole | string | undefined): string {
+  if (role === UserRole.FINANCE_BILLING) return 'billing';
+  if (role === UserRole.ADMISSIONS_FRONT_DESK) return 'patients';
+  if (role === UserRole.PHARMACIST) return 'pharmacy';
+  if (role === UserRole.INVENTORY_STORE) return 'inventory';
+  return 'dashboard';
+}
+

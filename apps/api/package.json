@@ -17,7 +17,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "supabase:seed": "node dist/database/seed.js"
+    "supabase:seed": "node dist/database/seed.js",
+    "provision:admin": "ts-node src/database/provision-admin.ts"
   },
   "dependencies": {
     "@calyvia/shared": "*",

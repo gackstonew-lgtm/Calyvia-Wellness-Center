@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SecurityService } from './security.service';
-import { LoginDto, RefreshTokenDto } from './dto/auth.dto';
+import { LoginDto, RefreshTokenDto, RequestAccessDto } from './dto/auth.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -17,6 +17,14 @@ export class SecurityController {
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(@Body() loginDto: LoginDto) {
     return this.securityService.login(loginDto);
+  }
+
+  @Post('request-access')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Submit personnel access request for administrator authorization' })
+  @ApiResponse({ status: 200, description: 'Access request queued for administrator review' })
+  async requestAccess(@Body() dto: RequestAccessDto) {
+    return this.securityService.requestAccess(dto);
   }
 
   @Post('refresh')
@@ -37,3 +45,4 @@ export class SecurityController {
     };
   }
 }
+
