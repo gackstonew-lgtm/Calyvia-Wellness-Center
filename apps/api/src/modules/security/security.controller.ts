@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SecurityService } from './security.service';
-import { LoginDto, RefreshTokenDto, RequestAccessDto } from './dto/auth.dto';
+import { LoginDto, RefreshTokenDto, RequestAccessDto, ChangePasswordDto } from './dto/auth.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -32,6 +32,16 @@ export class SecurityController {
   @ApiOperation({ summary: 'Obtain new access token using refresh token' })
   async refresh(@Body() refreshDto: RefreshTokenDto) {
     return this.securityService.refreshToken(refreshDto.refreshToken);
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change password for authenticated staff or primary administrator' })
+  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  async changePassword(@CurrentUser() user: any, @Body() dto: ChangePasswordDto) {
+    return this.securityService.changePassword(user.id || user.sub, dto);
   }
 
   @Get('me')

@@ -4,6 +4,8 @@
 -- Idempotent Custom ENUM Definitions
 -- ==============================================================================
 
+SET search_path = public, extensions;
+
 DO $$ BEGIN
     CREATE TYPE "UserRole" AS ENUM (
         'SUPER_ADMIN',

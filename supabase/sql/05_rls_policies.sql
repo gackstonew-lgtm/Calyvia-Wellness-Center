@@ -4,6 +4,8 @@
 -- Row Level Security (RLS) Policies Enforcing Least-Privilege & KDPA 2019
 -- ==============================================================================
 
+SET search_path = public, extensions;
+
 -- ------------------------------------------------------------------------------
 -- 1. Enable Row Level Security on 100% of Relational Tables
 -- ------------------------------------------------------------------------------
@@ -56,7 +58,7 @@ RETURNS TEXT
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions, pg_temp
 AS $$
     SELECT COALESCE(
         current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role',
@@ -126,6 +128,7 @@ END $$;
 -- 5. Clinical Staff Policies (Medical Director, Doctors, Nurses, Counsellors)
 -- ------------------------------------------------------------------------------
 -- Clinical Read Access to Patients & Admissions
+DROP POLICY IF EXISTS clinical_read_patients ON public.patients;
 CREATE POLICY clinical_read_patients ON public.patients
     FOR SELECT TO authenticated
     USING (public.get_current_user_role() IN (
@@ -133,6 +136,7 @@ CREATE POLICY clinical_read_patients ON public.patients
         'ADMISSIONS_FRONT_DESK', 'PHARMACIST', 'FINANCE_BILLING'
     ));
 
+DROP POLICY IF EXISTS clinical_read_admissions ON public.admissions;
 CREATE POLICY clinical_read_admissions ON public.admissions
     FOR SELECT TO authenticated
     USING (public.get_current_user_role() IN (
@@ -141,43 +145,51 @@ CREATE POLICY clinical_read_admissions ON public.admissions
     ));
 
 -- Clinical Notes (Doctors, Psychs, Nurses, Counsellors)
+DROP POLICY IF EXISTS clinical_notes_access ON public.clinical_notes;
 CREATE POLICY clinical_notes_access ON public.clinical_notes
     FOR ALL TO authenticated
     USING (public.get_current_user_role() IN ('MEDICAL_DIRECTOR', 'DOCTOR_PSYCHIATRIST', 'NURSE', 'COUNSELLOR'))
     WITH CHECK (public.get_current_user_role() IN ('MEDICAL_DIRECTOR', 'DOCTOR_PSYCHIATRIST', 'NURSE', 'COUNSELLOR'));
 
 -- Detox & Vitals (Doctors & Nurses)
+DROP POLICY IF EXISTS detox_episodes_access ON public.detox_episodes;
 CREATE POLICY detox_episodes_access ON public.detox_episodes
     FOR ALL TO authenticated
     USING (public.get_current_user_role() IN ('MEDICAL_DIRECTOR', 'DOCTOR_PSYCHIATRIST', 'NURSE'))
     WITH CHECK (public.get_current_user_role() IN ('MEDICAL_DIRECTOR', 'DOCTOR_PSYCHIATRIST', 'NURSE'));
 
+DROP POLICY IF EXISTS vitals_logs_access ON public.vitals_logs;
 CREATE POLICY vitals_logs_access ON public.vitals_logs
     FOR ALL TO authenticated
     USING (public.get_current_user_role() IN ('MEDICAL_DIRECTOR', 'DOCTOR_PSYCHIATRIST', 'NURSE'))
     WITH CHECK (public.get_current_user_role() IN ('MEDICAL_DIRECTOR', 'DOCTOR_PSYCHIATRIST', 'NURSE'));
 
 -- Counselling Sessions (Counsellors & Psychologists)
+DROP POLICY IF EXISTS counselling_sessions_access ON public.counselling_sessions;
 CREATE POLICY counselling_sessions_access ON public.counselling_sessions
     FOR ALL TO authenticated
     USING (public.get_current_user_role() IN ('MEDICAL_DIRECTOR', 'COUNSELLOR', 'DOCTOR_PSYCHIATRIST'))
     WITH CHECK (public.get_current_user_role() IN ('MEDICAL_DIRECTOR', 'COUNSELLOR', 'DOCTOR_PSYCHIATRIST'));
 
 -- Pharmacy & e-MAR (Pharmacists, Doctors, Nurses)
+DROP POLICY IF EXISTS pharmacy_medications_read ON public.medications;
 CREATE POLICY pharmacy_medications_read ON public.medications
     FOR SELECT TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS pharmacy_medications_write ON public.medications;
 CREATE POLICY pharmacy_medications_write ON public.medications
     FOR ALL TO authenticated
     USING (public.get_current_user_role() IN ('PHARMACIST', 'MEDICAL_DIRECTOR'))
     WITH CHECK (public.get_current_user_role() IN ('PHARMACIST', 'MEDICAL_DIRECTOR'));
 
+DROP POLICY IF EXISTS prescriptions_access ON public.prescriptions;
 CREATE POLICY prescriptions_access ON public.prescriptions
     FOR ALL TO authenticated
     USING (public.get_current_user_role() IN ('DOCTOR_PSYCHIATRIST', 'MEDICAL_DIRECTOR', 'PHARMACIST', 'NURSE'))
     WITH CHECK (public.get_current_user_role() IN ('DOCTOR_PSYCHIATRIST', 'MEDICAL_DIRECTOR'));
 
+DROP POLICY IF EXISTS med_admin_access ON public.medication_administrations;
 CREATE POLICY med_admin_access ON public.medication_administrations
     FOR ALL TO authenticated
     USING (public.get_current_user_role() IN ('NURSE', 'DOCTOR_PSYCHIATRIST', 'PHARMACIST', 'MEDICAL_DIRECTOR'))
@@ -186,23 +198,28 @@ CREATE POLICY med_admin_access ON public.medication_administrations
 -- ------------------------------------------------------------------------------
 -- 6. Front Desk & Admissions Policies
 -- ------------------------------------------------------------------------------
+DROP POLICY IF EXISTS front_desk_patients_write ON public.patients;
 CREATE POLICY front_desk_patients_write ON public.patients
     FOR INSERT TO authenticated
     WITH CHECK (public.get_current_user_role() IN ('ADMISSIONS_FRONT_DESK', 'MEDICAL_DIRECTOR'));
 
+DROP POLICY IF EXISTS front_desk_leads ON public.leads;
 CREATE POLICY front_desk_leads ON public.leads
     FOR ALL TO authenticated
     USING (public.get_current_user_role() IN ('ADMISSIONS_FRONT_DESK', 'MANAGEMENT_EXECUTIVE'))
     WITH CHECK (public.get_current_user_role() IN ('ADMISSIONS_FRONT_DESK'));
 
+DROP POLICY IF EXISTS front_desk_rooms_read ON public.rooms;
 CREATE POLICY front_desk_rooms_read ON public.rooms
     FOR SELECT TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS front_desk_beds_read ON public.beds;
 CREATE POLICY front_desk_beds_read ON public.beds
     FOR SELECT TO authenticated
     USING (true);
 
+DROP POLICY IF EXISTS front_desk_bed_allocations ON public.bed_allocations;
 CREATE POLICY front_desk_bed_allocations ON public.bed_allocations
     FOR ALL TO authenticated
     USING (public.get_current_user_role() IN ('ADMISSIONS_FRONT_DESK', 'NURSE', 'MEDICAL_DIRECTOR'))
@@ -211,16 +228,19 @@ CREATE POLICY front_desk_bed_allocations ON public.bed_allocations
 -- ------------------------------------------------------------------------------
 -- 7. Billing & Finance Policies
 -- ------------------------------------------------------------------------------
+DROP POLICY IF EXISTS billing_invoices_access ON public.invoices;
 CREATE POLICY billing_invoices_access ON public.invoices
     FOR ALL TO authenticated
     USING (public.get_current_user_role() IN ('FINANCE_BILLING', 'MANAGEMENT_EXECUTIVE'))
     WITH CHECK (public.get_current_user_role() IN ('FINANCE_BILLING'));
 
+DROP POLICY IF EXISTS billing_payments_access ON public.payments;
 CREATE POLICY billing_payments_access ON public.payments
     FOR ALL TO authenticated
     USING (public.get_current_user_role() IN ('FINANCE_BILLING', 'MANAGEMENT_EXECUTIVE'))
     WITH CHECK (public.get_current_user_role() IN ('FINANCE_BILLING'));
 
+DROP POLICY IF EXISTS billing_mpesa_access ON public.mpesa_transactions;
 CREATE POLICY billing_mpesa_access ON public.mpesa_transactions
     FOR ALL TO authenticated
     USING (public.get_current_user_role() IN ('FINANCE_BILLING', 'MANAGEMENT_EXECUTIVE'))

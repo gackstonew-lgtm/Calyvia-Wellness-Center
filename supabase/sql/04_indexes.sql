@@ -4,6 +4,8 @@
 -- Production Performance & Query Indexes for PostgreSQL 16
 -- ==============================================================================
 
+SET search_path = public, extensions;
+
 -- 1. users
 CREATE INDEX IF NOT EXISTS idx_users_role ON public.users(role);
 CREATE INDEX IF NOT EXISTS idx_users_is_active ON public.users(is_active);

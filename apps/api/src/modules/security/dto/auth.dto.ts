@@ -53,3 +53,16 @@ export class RequestAccessDto {
   justification!: string;
 }
 
+export class ChangePasswordDto {
+  @ApiProperty({ example: 'admin123' })
+  @IsString()
+  @IsNotEmpty()
+  currentPassword!: string;
+
+  @ApiProperty({ example: 'NewSecureAdminPassword#2026' })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  newPassword!: string;
+}
+

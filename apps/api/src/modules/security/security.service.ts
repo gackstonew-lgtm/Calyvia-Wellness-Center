@@ -1,8 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../../database/prisma.service';
-import { LoginDto, RequestAccessDto } from './dto/auth.dto';
+import { LoginDto, RequestAccessDto, ChangePasswordDto } from './dto/auth.dto';
 import { UserRole } from '@calyvia/shared';
 
 @Injectable()
@@ -87,6 +87,7 @@ export class SecurityService {
         email: user.email,
         fullName: user.fullName,
         role: user.role,
+        mustChangePassword: !!user.mustChangePassword,
       },
       tokens: {
         accessToken,
@@ -145,6 +146,66 @@ export class SecurityService {
     return {
       success: true,
       message: 'Access request submitted successfully. A Calyvia facility administrator will review your credentials and verify institutional authorization.',
+    };
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const { currentPassword, newPassword } = dto;
+
+    if (!newPassword || newPassword.length < 8) {
+      throw new BadRequestException('New password must be at least 8 characters in length.');
+    }
+
+    if (currentPassword === newPassword) {
+      throw new BadRequestException('New password must be different from the current temporary password.');
+    }
+
+    let user = null;
+    if (this.prisma && this.prisma.user) {
+      user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+    }
+
+    if (!user) {
+      throw new UnauthorizedException('User account not found.');
+    }
+
+    const isValid = await this.verifyPassword(user.passwordHash, currentPassword);
+    if (!isValid) {
+      throw new UnauthorizedException('Current password does not match.');
+    }
+
+    const newHash = await this.hashPassword(newPassword);
+
+    if (this.prisma && this.prisma.user) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          passwordHash: newHash,
+          mustChangePassword: false,
+          updatedAt: new Date(),
+        },
+      });
+
+      // Record in audit log
+      if ((this.prisma as any).auditLog) {
+        await (this.prisma as any).auditLog.create({
+          data: {
+            userId: user.id,
+            role: user.role,
+            action: 'USER_PASSWORD_CHANGE',
+            entityName: 'users',
+            entityId: user.id,
+            newValues: { changedAt: new Date().toISOString() },
+          },
+        });
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Password changed successfully. Permanent administrative credentials activated.',
     };
   }
 }

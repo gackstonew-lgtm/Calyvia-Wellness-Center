@@ -4,6 +4,8 @@
 -- Production PostgreSQL 16 DDL for All 41 Relational Domain Tables
 -- ==============================================================================
 
+SET search_path = public, extensions;
+
 -- 1. users
 CREATE TABLE IF NOT EXISTS public.users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -13,11 +15,15 @@ CREATE TABLE IF NOT EXISTS public.users (
     full_name TEXT NOT NULL,
     phone TEXT,
     is_active BOOLEAN NOT NULL DEFAULT true,
+    must_change_password BOOLEAN NOT NULL DEFAULT false,
     two_factor_secret TEXT,
     last_login_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Ensure must_change_password column exists on pre-existing users table
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false;
 
 -- 2. staff_profiles
 CREATE TABLE IF NOT EXISTS public.staff_profiles (

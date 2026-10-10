@@ -4,6 +4,8 @@
 -- Production Supabase Storage Buckets & Storage Security Policies
 -- ==============================================================================
 
+SET search_path = public, extensions;
+
 -- ------------------------------------------------------------------------------
 -- 1. Create Private and Public Storage Buckets
 -- ------------------------------------------------------------------------------

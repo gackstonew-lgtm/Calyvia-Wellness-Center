@@ -4,6 +4,8 @@
 -- Production Triggers & Automated Helper Functions
 -- ==============================================================================
 
+SET search_path = public, extensions;
+
 -- ------------------------------------------------------------------------------
 -- 1. Automated Timestamp Trigger Function: handle_updated_at
 -- ------------------------------------------------------------------------------
