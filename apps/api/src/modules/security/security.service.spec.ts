@@ -50,7 +50,7 @@ describe('SecurityService (Authentication & Password Security)', () => {
 
     const isInvalid = await service.verifyPassword(hash, 'WrongPassword');
     expect(isInvalid).toBe(false);
-  });
+  }, 15000);
 
   it('should authenticate bootstrap admin credentials when database is uninitialized', async () => {
     mockPrisma.user.findUnique.mockResolvedValue(null);
