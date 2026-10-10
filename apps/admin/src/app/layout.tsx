@@ -2,8 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import '../styles/globals.css';
 import { ThemeProvider } from '../components/ThemeProvider';
 import { AuthProvider } from '../components/AuthContext';
-import { CalyviaAiAssistant } from '../components/CalyviaAiAssistant';
-import { PwaInstallBanner } from '../components/PwaInstallBanner';
+import { ClientShell } from '../components/ClientShell';
 
 export const metadata: Metadata = {
   title: 'Calyvia Wellness Center | Clinic Management System',
@@ -63,8 +62,7 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             {children}
-            <PwaInstallBanner />
-            <CalyviaAiAssistant />
+            <ClientShell />
           </AuthProvider>
         </ThemeProvider>
       </body>

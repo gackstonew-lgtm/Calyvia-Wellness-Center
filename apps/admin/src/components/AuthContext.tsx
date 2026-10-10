@@ -40,7 +40,19 @@ interface AuthContextType {
   defaultModule: string;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const defaultAuthValue: AuthContextType = {
+  user: null,
+  token: null,
+  isLoading: false,
+  login: async () => ({ success: false, error: 'Auth context not initialized' }),
+  logout: () => {},
+  requestAccess: async () => ({ success: false, error: 'Auth context not initialized' }),
+  canAccess: () => false,
+  hasPerm: () => false,
+  defaultModule: 'dashboard',
+};
+
+const AuthContext = createContext<AuthContextType>(defaultAuthValue);
 
 const STORAGE_KEY = 'calyvia_auth_session';
 
@@ -236,8 +248,5 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return context || defaultAuthValue;
 };
