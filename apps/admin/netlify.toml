@@ -4,8 +4,9 @@
 # ========================================================
 
 [build]
-  command = "next build"
-  publish = ".next"
+  # Builds shared library contracts then Next.js admin workspace
+  command = "npm run build:admin"
+  publish = "apps/admin/.next"
 
 [build.environment]
   NODE_VERSION = "20"
