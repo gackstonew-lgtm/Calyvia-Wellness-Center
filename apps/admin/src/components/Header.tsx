@@ -64,7 +64,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onSelectModu
             onClick={() => setShowNotifications(!showNotifications)}
             title="Active Clinical Alerts"
             aria-label="Active Clinical Alerts"
-            className="w-9 h-9 rounded-xl border border-border bg-surface hover:bg-surface-elevated text-foreground flex items-center justify-center hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-xs relative"
+            className="w-9 h-9 rounded-xl border border-border bg-surface hover:bg-surface-elevated text-foreground flex items-center justify-center hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-xs relative cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden"
           >
             <Bell className="w-4 h-4 text-muted-foreground" />
             <span className="absolute top-2 right-2 w-2 h-2 bg-accent rounded-full animate-pulse" />
@@ -90,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onSelectModu
           onClick={toggleTheme}
           title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          className="w-9 h-9 rounded-xl bg-surface hover:bg-surface-elevated border border-border text-foreground flex items-center justify-center hover:border-primary/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-xs"
+          className="w-9 h-9 rounded-xl bg-surface hover:bg-surface-elevated border border-border text-foreground flex items-center justify-center hover:border-primary/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden"
         >
           {theme === 'dark' ? (
             <Sun className="w-4 h-4 text-amber-400" />
@@ -104,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onSelectModu
           onClick={() => onSelectModule && onSelectModule('system_admin')}
           title="System Settings"
           aria-label="System Settings"
-          className="w-9 h-9 rounded-xl bg-surface hover:bg-surface-elevated border border-border text-muted-foreground hover:text-foreground flex items-center justify-center hover:border-primary/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-xs"
+          className="w-9 h-9 rounded-xl bg-surface hover:bg-surface-elevated border border-border text-muted-foreground hover:text-foreground flex items-center justify-center hover:border-primary/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden"
         >
           <Settings className="w-4 h-4" />
         </button>

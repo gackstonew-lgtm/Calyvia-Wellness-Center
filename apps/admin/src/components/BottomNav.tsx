@@ -101,7 +101,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               <button
                 key={tab.id}
                 onClick={() => handleSelect(tab.id)}
-                className={`relative flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-semibold transition-all duration-150 min-h-[44px] min-w-[44px] touch-manipulation ${
+                className={`relative flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-semibold transition-all duration-150 min-h-[44px] min-w-[44px] touch-manipulation cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden ${
                   active
                     ? 'text-primary'
                     : 'text-muted-foreground hover:text-foreground active:scale-95'
@@ -128,7 +128,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           {/* More Modules Toggle Button */}
           <button
             onClick={() => setIsMoreOpen(true)}
-            className={`relative flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-semibold transition-all duration-150 min-h-[44px] min-w-[44px] touch-manipulation ${
+            className={`relative flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-semibold transition-all duration-150 min-h-[44px] min-w-[44px] touch-manipulation cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden ${
               isMoreOpen ||
               (!primaryTabs.some((t) => isTabActive(t.id)) && currentModule !== '')
                 ? 'text-primary'

@@ -351,7 +351,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Navigation List with 5 Visual Sections & Consolidated 15 Primary Modules */}
-      <div className="flex-1 overflow-y-auto py-3 px-2 space-y-4 text-xs font-sans">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-4 text-xs font-sans">
         {visibleSections.map((section, idx) => (
           <div key={idx} className="space-y-1">
             {!isCollapsed && (
@@ -376,7 +376,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => handleSelect(defaultTarget)}
                     title={mod.name}
                     aria-label={mod.name}
-                    className={`w-full flex items-center justify-center px-2 py-3 rounded-2xl transition-all duration-150 ${
+                    aria-current={isParentActive ? 'page' : undefined}
+                    className={`w-full flex items-center justify-center px-2 py-3 rounded-2xl transition-all duration-150 min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden cursor-pointer ${
                       isParentActive
                         ? 'bg-primary text-primary-foreground font-semibold shadow-xs dark:shadow-[0_2px_12px_-2px_rgba(0,230,118,0.3)]'
                         : 'text-muted-foreground hover:bg-surface-subtle hover:text-foreground'
@@ -413,7 +414,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       }}
                       title={mod.name}
                       aria-label={mod.name}
-                      className={`flex-1 flex items-center justify-between space-x-2.5 px-3 py-2 rounded-2xl transition-all duration-150 text-left ${
+                      aria-current={isParentActive ? 'page' : undefined}
+                      className={`flex-1 flex items-center justify-between space-x-2.5 px-3 py-2 rounded-2xl transition-all duration-150 text-left min-h-[40px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden cursor-pointer ${
                         isParentActive
                           ? 'bg-primary/10 text-primary font-semibold'
                           : 'text-muted-foreground hover:bg-surface-subtle hover:text-foreground'
@@ -434,7 +436,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             e.stopPropagation();
                             toggleParentExpand(mod.id);
                           }}
-                          className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground/80 hover:text-foreground"
+                          className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden cursor-pointer"
                           aria-label={isExpanded ? `Collapse ${mod.name}` : `Expand ${mod.name}`}
                         >
                           <ChevronDown
@@ -456,7 +458,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           <button
                             key={sub.id}
                             onClick={() => handleSelect(sub.id)}
-                            className={`w-full text-left px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-all duration-150 truncate block ${
+                            aria-current={isSubActive ? 'page' : undefined}
+                            className={`w-full text-left px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-all duration-150 truncate block min-h-[32px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden cursor-pointer ${
                               isSubActive
                                 ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-surface-subtle'
@@ -476,7 +479,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Minimal Logout Button at Bottom of Sidebar */}
-      <div className="p-3 bg-surface-subtle border-t border-border">
+      <div className="p-3 bg-surface-subtle border-t border-border flex-shrink-0">
         <button
           onClick={handleLogout}
           disabled={isLoggingOut}
@@ -484,7 +487,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           aria-label="Logout"
           className={`w-full flex items-center ${
             isCollapsed ? 'justify-center p-2.5' : 'space-x-2.5 px-3.5 py-2.5'
-          } rounded-xl border border-border bg-surface hover:bg-danger-soft hover:border-danger/30 text-muted-foreground hover:text-danger active:scale-[0.98] transition-all duration-150 cursor-pointer shadow-xs disabled:opacity-50`}
+          } rounded-xl border border-border bg-surface hover:bg-danger-soft hover:border-danger/30 text-muted-foreground hover:text-danger active:scale-[0.98] transition-all duration-150 cursor-pointer shadow-xs disabled:opacity-50 min-h-[44px] focus-visible:ring-2 focus-visible:ring-danger focus-visible:outline-hidden`}
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
           {!isCollapsed && (

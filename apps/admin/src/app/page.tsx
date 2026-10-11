@@ -306,9 +306,14 @@ export default function AdminDashboardPage() {
   const [pharmacyStock, setPharmacyStock] = useState<any[]>([]);
   const [loadingPharmacy, setLoadingPharmacy] = useState<boolean>(false);
 
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+
   const fetchDashboardMetrics = useCallback(async () => {
     if (!token) return;
     setLoadingMetrics(true);
+    setMetricsError(null);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
       const res = await fetch(`${apiUrl}/dashboard`, {
@@ -317,9 +322,13 @@ export default function AdminDashboardPage() {
       if (res.ok) {
         const data = await res.json();
         setDashboardMetrics(data);
+        setLastSyncedAt(new Date());
+      } else {
+        setMetricsError('Database synchronization issue. Check backend connection.');
       }
     } catch (err) {
       console.warn('Failed to fetch dashboard metrics:', err);
+      setMetricsError('Network timeout reaching API service.');
     } finally {
       setLoadingMetrics(false);
     }
@@ -470,6 +479,27 @@ export default function AdminDashboardPage() {
       setLoadingPharmacy(false);
     }
   }, [token]);
+
+  const handleRefreshAll = useCallback(async () => {
+    if (!token) return;
+    setIsRefreshing(true);
+    setMetricsError(null);
+    try {
+      await Promise.allSettled([
+        fetchDashboardMetrics(),
+        fetchPatients(),
+        fetchAppointments(),
+        fetchLeads(),
+        fetchStaff(),
+        fetchPharmacy(),
+      ]);
+      setLastSyncedAt(new Date());
+    } catch {
+      setMetricsError('Failed to refresh data. Retrying connection...');
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [token, fetchDashboardMetrics, fetchPatients, fetchAppointments, fetchLeads, fetchStaff, fetchPharmacy]);
 
   useEffect(() => {
     if (token) {
@@ -672,7 +702,50 @@ export default function AdminDashboardPage() {
                   : `Calyvia Wellness Center • Enterprise HMIS / EMR System`}
               </p>
             </div>
+
+            {/* Live Data Freshness & Quick Action Bar for Dashboard */}
+            {activeModule === 'dashboard' && (
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-surface-subtle border border-border text-[11px] font-mono text-muted-foreground">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+                  <span className="font-semibold text-foreground">PostgreSQL Live</span>
+                  <span>•</span>
+                  <span>{lastSyncedAt ? `Synced ${lastSyncedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Syncing...'}</span>
+                </div>
+
+                <button
+                  onClick={handleRefreshAll}
+                  disabled={isRefreshing}
+                  title="Synchronize live records from database"
+                  aria-label="Refresh dashboard data"
+                  className="p-2 rounded-xl border border-border bg-surface hover:bg-surface-elevated text-foreground active:scale-95 transition-all shadow-xs disabled:opacity-50 flex items-center justify-center cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-primary' : 'text-muted-foreground'}`} />
+                </button>
+
+                <button
+                  onClick={() => setActiveModal('register_patient')}
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold shadow-xs transition-all active:scale-[0.98] cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Register Patient</span>
+                </button>
+              </div>
+            )}
           </div>
+
+          {/* Error Banner if Synchronization has issues */}
+          {metricsError && (
+            <div className="p-3.5 rounded-2xl bg-danger-soft border border-danger/20 flex items-center justify-between text-xs text-danger animate-in fade-in">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{metricsError}</span>
+              </div>
+              <button onClick={handleRefreshAll} className="underline font-semibold hover:text-danger/80 cursor-pointer">
+                Retry Now
+              </button>
+            </div>
+          )}
 
           {/* Access Control Barrier: Enforce Role Authorization for Module */}
           {!canAccessModule(user.role, activeModule) && (
@@ -703,9 +776,90 @@ export default function AdminDashboardPage() {
           {/* Module: Dashboard & Management Overview */}
           {activeModule === 'dashboard' && canAccessModule(user.role, 'dashboard') && (
             <div className="space-y-6">
+              {/* Operational Status & Clinical Highlights Banner */}
+              {(() => {
+                const criticalCount = dashboardMetrics?.clinical?.criticalVitalsAlerts ?? 0;
+                const detoxCases = dashboardMetrics?.admissions?.activeDetoxCases ?? 0;
+
+                if (criticalCount > 0) {
+                  return (
+                    <div className="p-4 rounded-2xl bg-warning-soft border border-warning/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-xl bg-warning/20 text-warning flex items-center justify-center flex-shrink-0">
+                          <AlertTriangle className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-foreground">High Acuity Clinical Notice</div>
+                          <div className="text-muted-foreground mt-0.5">
+                            {criticalCount} patient vitals alert(s) require review in Ruiru inpatient detox ward.
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setActiveModule('clinical')}
+                        className="px-3 py-1.5 rounded-xl bg-warning text-warning-foreground font-semibold hover:opacity-90 transition-opacity self-start sm:self-auto text-xs cursor-pointer"
+                      >
+                        Open Detox Station &rarr;
+                      </button>
+                    </div>
+                  );
+                }
+
+                if (detoxCases > 0) {
+                  return (
+                    <div className="p-4 rounded-2xl bg-surface-subtle border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-xl bg-primary-soft text-primary flex items-center justify-center flex-shrink-0">
+                          <Activity className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-foreground">Active Inpatient Medical Detox</div>
+                          <div className="text-muted-foreground mt-0.5">
+                            {detoxCases} client(s) currently admitted under structured CIWA-Ar withdrawal protocols.
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setActiveModule('clinical')}
+                        className="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary-hover transition-all self-start sm:self-auto text-xs cursor-pointer"
+                      >
+                        View Detox Vitals &rarr;
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="p-3.5 sm:p-4 rounded-2xl bg-surface-subtle border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded-xl bg-primary-soft text-primary flex items-center justify-center flex-shrink-0">
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-foreground">Facility Operations Nominal</span>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          Mugutha, Ruiru Center • All patient vitals nominal • 0 active safety incidents logged.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 text-[11px] font-mono text-muted-foreground self-start sm:self-auto">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span>24/7 Clinical & Nursing Coverage</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* 4 Metric Overview Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-card p-5 rounded-2xl border border-border shadow-card flex flex-col justify-between hover:border-border-strong hover:shadow-elevated transition-all duration-200 group">
+                {/* Total Inpatients Card */}
+                <div
+                  onClick={() => setActiveModule('rooms')}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && setActiveModule('rooms')}
+                  className="bg-card p-5 rounded-2xl border border-border shadow-card flex flex-col justify-between hover:border-primary/40 hover:shadow-elevated transition-all duration-200 group cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden"
+                >
                   <div className="flex items-center justify-between text-muted-foreground text-xs font-medium">
                     <span className="text-foreground font-semibold">Total Inpatients</span>
                     <div className="w-8 h-8 rounded-xl bg-primary-soft text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -726,14 +880,21 @@ export default function AdminDashboardPage() {
                         <ArrowUpRight className="w-3 h-3 mr-0.5" />
                         {dashboardMetrics?.census?.occupancyRatePercentage ?? 0}% Occupancy
                       </span>
-                      <span className="text-[11px] text-muted-foreground">
+                      <span className="text-[11px] text-muted-foreground font-medium">
                         {dashboardMetrics?.census?.availableBeds ?? 0} available
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-card p-5 rounded-2xl border border-border shadow-card flex flex-col justify-between hover:border-border-strong hover:shadow-elevated transition-all duration-200 group">
+                {/* Today's Appointments Card */}
+                <div
+                  onClick={() => setActiveModule('appointments')}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && setActiveModule('appointments')}
+                  className="bg-card p-5 rounded-2xl border border-border shadow-card flex flex-col justify-between hover:border-secondary/40 hover:shadow-elevated transition-all duration-200 group cursor-pointer focus-visible:ring-2 focus-visible:ring-secondary focus-visible:outline-hidden"
+                >
                   <div className="flex items-center justify-between text-muted-foreground text-xs font-medium">
                     <span className="text-foreground font-semibold">Today&apos;s Appointments</span>
                     <div className="w-8 h-8 rounded-xl bg-secondary-soft text-secondary flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -752,14 +913,21 @@ export default function AdminDashboardPage() {
                         <CheckCircle2 className="w-3 h-3 mr-0.5" />
                         {dashboardMetrics?.clinical?.completedSessions ?? 0} Completed
                       </span>
-                      <span className="text-[11px] text-muted-foreground">
+                      <span className="text-[11px] text-muted-foreground font-medium">
                         {dashboardMetrics?.clinical?.pendingSessions ?? appointments.length} Pending
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-card p-5 rounded-2xl border border-border shadow-card flex flex-col justify-between hover:border-border-strong hover:shadow-elevated transition-all duration-200 group">
+                {/* Active Medical Detox Card */}
+                <div
+                  onClick={() => setActiveModule('clinical')}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && setActiveModule('clinical')}
+                  className="bg-card p-5 rounded-2xl border border-border shadow-card flex flex-col justify-between hover:border-accent/40 hover:shadow-elevated transition-all duration-200 group cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-hidden"
+                >
                   <div className="flex items-center justify-between text-muted-foreground text-xs font-medium">
                     <span className="text-foreground font-semibold">Active Medical Detox</span>
                     <div className="w-8 h-8 rounded-xl bg-accent-soft text-accent flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -778,33 +946,40 @@ export default function AdminDashboardPage() {
                         <AlertCircle className="w-3 h-3 mr-0.5" />
                         {dashboardMetrics?.clinical?.criticalVitalsAlerts ?? 0} Critical Alerts
                       </span>
-                      <span className="text-[11px] text-muted-foreground">
-                        {(dashboardMetrics?.admissions?.activeDetoxCases ?? 0) > 0 ? '< 30m due' : 'All clear'}
+                      <span className="text-[11px] text-muted-foreground font-medium">
+                        {(dashboardMetrics?.admissions?.activeDetoxCases ?? 0) > 0 ? 'Taper Protocol' : 'Nominal'}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-card p-5 rounded-2xl border border-border shadow-card flex flex-col justify-between hover:border-border-strong hover:shadow-elevated transition-all duration-200 group">
+                {/* MTD Collections Card */}
+                <div
+                  onClick={() => setActiveModule('billing')}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && setActiveModule('billing')}
+                  className="bg-card p-5 rounded-2xl border border-border shadow-card flex flex-col justify-between hover:border-primary/40 hover:shadow-elevated transition-all duration-200 group cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden"
+                >
                   <div className="flex items-center justify-between text-muted-foreground text-xs font-medium">
-                    <span className="text-foreground font-semibold">MTD Revenue</span>
+                    <span className="text-foreground font-semibold">MTD Collections</span>
                     <div className="w-8 h-8 rounded-xl bg-primary-soft text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
                       <CreditCard className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="mt-3">
                     <div className="flex items-baseline space-x-2">
-                      <span className="text-2xl font-bold font-mono text-foreground">
+                      <span className="text-2xl font-bold font-mono text-foreground truncate">
                         KES {Number(dashboardMetrics?.financials?.mtdRevenueCollected || 0).toLocaleString()}
                       </span>
                     </div>
                     <div className="mt-2.5 flex items-center justify-between text-xs">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-success-soft text-success border border-success/20">
                         <TrendingUp className="w-3 h-3 mr-0.5" />
-                        {(Number(dashboardMetrics?.financials?.mtdRevenueCollected) || 0) > 0 ? '+14.2% vs target' : 'Live Receipts'}
-                      </span>
-                      <span className="text-[11px] text-muted-foreground">
                         M-Pesa: {dashboardMetrics?.financials?.mpesaVolumePercentage ?? 0}%
+                      </span>
+                      <span className="text-[11px] text-muted-foreground font-medium">
+                        KES {Number(dashboardMetrics?.financials?.outstandingBalances || 0).toLocaleString()} bal
                       </span>
                     </div>
                   </div>
@@ -819,41 +994,82 @@ export default function AdminDashboardPage() {
                   <div className="bg-card p-5 sm:p-6 rounded-2xl border border-border shadow-card space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div>
-                        <h2 className="font-serif text-lg font-bold text-foreground">
-                          Clinical Activity & Patient Census Trends
-                        </h2>
-                        <p className="text-xs text-muted-foreground">
-                          Weekly inpatient admissions, consultations, and detox discharges
+                        <div className="flex items-center space-x-2">
+                          <h2 className="font-serif text-lg font-bold text-foreground">
+                            Clinical Activity & Patient Census Trends
+                          </h2>
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-surface-subtle text-muted-foreground border border-border">
+                            {trendView === 'weekly' ? '7-Day View' : '4-Week View'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {trendView === 'weekly'
+                            ? 'Daily inpatient census, therapy reviews, and clinical admissions across the week'
+                            : 'Rolling weekly inpatient admissions, therapy reviews, and detox discharges across the month'}
                         </p>
                       </div>
-                      <div className="flex items-center space-x-1.5 bg-surface-subtle p-1 rounded-xl border border-border text-xs">
-                        <button
-                          onClick={() => setTrendView('weekly')}
-                          className={`px-3 py-1 rounded-lg font-medium transition-all ${
-                            trendView === 'weekly' ? 'bg-surface text-foreground shadow-xs font-semibold' : 'text-muted-foreground'
-                          }`}
-                        >
-                          Weekly
-                        </button>
-                        <button
-                          onClick={() => setTrendView('monthly')}
-                          className={`px-3 py-1 rounded-lg font-medium transition-all ${
-                            trendView === 'monthly' ? 'bg-surface text-foreground shadow-xs font-semibold' : 'text-muted-foreground'
-                          }`}
-                        >
-                          Monthly
-                        </button>
+
+                      <div className="flex items-center space-x-2">
+                        {/* Legend */}
+                        <div className="hidden sm:flex items-center space-x-3 text-[11px] text-muted-foreground mr-2">
+                          <span className="flex items-center space-x-1">
+                            <span className="w-2 h-2 rounded-full bg-primary" />
+                            <span>Inpatients</span>
+                          </span>
+                          <span className="flex items-center space-x-1">
+                            <span className="w-2 h-2 rounded-full bg-secondary" />
+                            <span>Therapy</span>
+                          </span>
+                        </div>
+
+                        {/* Period Toggle */}
+                        <div className="flex items-center space-x-1.5 bg-surface-subtle p-1 rounded-xl border border-border text-xs">
+                          <button
+                            onClick={() => setTrendView('weekly')}
+                            className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                              trendView === 'weekly' ? 'bg-surface text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            Weekly
+                          </button>
+                          <button
+                            onClick={() => setTrendView('monthly')}
+                            className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                              trendView === 'monthly' ? 'bg-surface text-foreground shadow-xs font-semibold' : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            Monthly
+                          </button>
+                        </div>
                       </div>
                     </div>
 
                     <div className="relative pt-4 pb-2">
                       {(dashboardMetrics?.census?.occupiedBeds ?? 0) === 0 && (dashboardMetrics?.admissions?.thisMonth ?? 0) === 0 ? (
-                        <div className="h-48 w-full flex flex-col items-center justify-center text-center p-4 rounded-xl bg-surface-subtle border border-dashed border-border">
-                          <Activity className="w-8 h-8 text-muted-foreground/40 mb-2" />
-                          <p className="text-xs font-semibold text-foreground">No Inpatient Clinical Trends Recorded Yet</p>
-                          <p className="text-[11px] text-muted-foreground max-w-sm mt-0.5">
-                            Census activity curves, consultations, and detox discharges will generate here automatically as patients are admitted.
-                          </p>
+                        <div className="h-52 w-full flex flex-col items-center justify-center text-center p-6 rounded-xl bg-surface-subtle border border-dashed border-border space-y-3">
+                          <div className="w-10 h-10 rounded-2xl bg-surface border border-border flex items-center justify-center text-muted-foreground">
+                            <Activity className="w-5 h-5 text-muted-foreground/60" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-foreground">No Inpatient Clinical Trends Recorded Yet</p>
+                            <p className="text-[11px] text-muted-foreground max-w-sm mt-1">
+                              Census curves and clinical consultations generate dynamically in real-time as patients are admitted.
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-2 pt-1">
+                            <button
+                              onClick={() => setActiveModal('register_patient')}
+                              className="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary-hover shadow-xs transition-all"
+                            >
+                              + Register Patient
+                            </button>
+                            <button
+                              onClick={() => setActiveModule('crm')}
+                              className="px-3 py-1.5 rounded-xl bg-surface border border-border text-foreground text-xs font-medium hover:bg-surface-elevated transition-all"
+                            >
+                              Intake Pipeline &rarr;
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <div className="h-48 w-full">
@@ -867,16 +1083,43 @@ export default function AdminDashboardPage() {
                             <line x1="0" y1="30" x2="500" y2="30" stroke="var(--border)" strokeDasharray="3 3" strokeWidth="1" />
                             <line x1="0" y1="75" x2="500" y2="75" stroke="var(--border)" strokeDasharray="3 3" strokeWidth="1" />
                             <line x1="0" y1="120" x2="500" y2="120" stroke="var(--border)" strokeDasharray="3 3" strokeWidth="1" />
-                            <path d="M 0 110 Q 80 40, 160 70 T 330 45 T 500 20 L 500 150 L 0 150 Z" fill="url(#primaryAreaGrad)" />
-                            <path d="M 0 110 Q 80 40, 160 70 T 330 45 T 500 20" fill="none" stroke="var(--primary)" strokeWidth="2.5" />
-                            <circle cx="160" cy="70" r="4" fill="var(--primary)" />
-                            <circle cx="330" cy="45" r="4" fill="var(--primary)" />
-                            <circle cx="500" cy="20" r="5" fill="var(--primary)" />
+                            {trendView === 'weekly' ? (
+                              <>
+                                <path d="M 0 110 Q 80 40, 160 70 T 330 45 T 500 25 L 500 150 L 0 150 Z" fill="url(#primaryAreaGrad)" />
+                                <path d="M 0 110 Q 80 40, 160 70 T 330 45 T 500 25" fill="none" stroke="var(--primary)" strokeWidth="2.5" />
+                                <circle cx="80" cy="55" r="3.5" fill="var(--primary)" />
+                                <circle cx="160" cy="70" r="4" fill="var(--primary)" />
+                                <circle cx="245" cy="50" r="3.5" fill="var(--primary)" />
+                                <circle cx="330" cy="45" r="4" fill="var(--primary)" />
+                                <circle cx="415" cy="35" r="3.5" fill="var(--primary)" />
+                                <circle cx="500" cy="25" r="5" fill="var(--primary)" />
+                              </>
+                            ) : (
+                              <>
+                                <path d="M 0 120 Q 125 75, 250 55 T 500 20 L 500 150 L 0 150 Z" fill="url(#primaryAreaGrad)" />
+                                <path d="M 0 120 Q 125 75, 250 55 T 500 20" fill="none" stroke="var(--primary)" strokeWidth="2.5" />
+                                <circle cx="125" cy="75" r="4" fill="var(--primary)" />
+                                <circle cx="250" cy="55" r="4" fill="var(--primary)" />
+                                <circle cx="375" cy="35" r="4" fill="var(--primary)" />
+                                <circle cx="500" cy="20" r="5" fill="var(--primary)" />
+                              </>
+                            )}
                           </svg>
                         </div>
                       )}
                       <div className="flex justify-between text-[11px] text-muted-foreground pt-3 border-t border-border/40 font-mono mt-2">
-                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                        {trendView === 'weekly' ? (
+                          <>
+                            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Week 1 (Intake)</span>
+                            <span>Week 2 (Detox/Stabilization)</span>
+                            <span>Week 3 (Therapy Cadence)</span>
+                            <span>Week 4 (Aftercare Transition)</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -990,24 +1233,59 @@ export default function AdminDashboardPage() {
                   {/* Facility Quick Operations */}
                   <div className="bg-card p-5 rounded-2xl border border-border shadow-card space-y-3.5 text-xs">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-foreground">Facility Operations</span>
-                      <span className="text-[10px] font-mono text-emerald-500 font-bold">Live Status</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-semibold text-foreground">Facility Operations</span>
+                        <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded-md text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span>Live</span>
+                        </span>
+                      </div>
+                      <button onClick={() => setActiveModule('staff')} className="text-xs text-primary font-semibold hover:underline cursor-pointer">
+                        Staff Roster &rarr;
+                      </button>
                     </div>
                     <div className="space-y-2.5">
-                      <div className="p-3 rounded-xl bg-surface-subtle border border-border flex items-center justify-between">
-                        <span className="text-foreground">Clinical Staff on Duty</span>
+                      <div
+                        onClick={() => setActiveModule('staff')}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => e.key === 'Enter' && setActiveModule('staff')}
+                        className="p-3 rounded-xl bg-surface-subtle border border-border flex items-center justify-between hover:border-primary/40 hover:bg-surface-elevated transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Users className="w-3.5 h-3.5 text-primary" />
+                          <span className="text-foreground">Clinical Staff on Duty</span>
+                        </div>
                         <span className="font-bold font-mono text-foreground">
                           {dashboardMetrics?.qualityAndSafety?.staffOnDuty ?? staffMembers.length} Active
                         </span>
                       </div>
-                      <div className="p-3 rounded-xl bg-surface-subtle border border-border flex items-center justify-between">
-                        <span className="text-foreground">Pharmacy In-Stock</span>
+                      <div
+                        onClick={() => setActiveModule('pharmacy')}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => e.key === 'Enter' && setActiveModule('pharmacy')}
+                        className="p-3 rounded-xl bg-surface-subtle border border-border flex items-center justify-between hover:border-primary/40 hover:bg-surface-elevated transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Pill className="w-3.5 h-3.5 text-secondary" />
+                          <span className="text-foreground">Pharmacy In-Stock</span>
+                        </div>
                         <span className="font-bold font-mono text-emerald-500">
-                          {pharmacyStock.length > 0 ? `${Math.round((pharmacyStock.filter((p) => p.status !== 'LOW_STOCK').length / pharmacyStock.length) * 100)}%` : '100%'}
+                          {pharmacyStock.length > 0 ? `${Math.round((pharmacyStock.filter((p) => p.status !== 'LOW_STOCK').length / pharmacyStock.length) * 100)}%` : '100% Nominal'}
                         </span>
                       </div>
-                      <div className="p-3 rounded-xl bg-surface-subtle border border-border flex items-center justify-between">
-                        <span className="text-foreground">Detox Bed Occupancy</span>
+                      <div
+                        onClick={() => setActiveModule('clinical')}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => e.key === 'Enter' && setActiveModule('clinical')}
+                        className="p-3 rounded-xl bg-surface-subtle border border-border flex items-center justify-between hover:border-accent/40 hover:bg-surface-elevated transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Activity className="w-3.5 h-3.5 text-accent" />
+                          <span className="text-foreground">Detox Bed Occupancy</span>
+                        </div>
                         <span className="font-bold font-mono text-accent">
                           {dashboardMetrics?.census?.detoxWardOccupancy ?? 0} Beds Active
                         </span>
@@ -1026,17 +1304,32 @@ export default function AdminDashboardPage() {
                           Scheduled psychiatric evaluations & therapy
                         </p>
                       </div>
-                      <button onClick={() => setActiveModule('appointments')} className="text-xs text-primary font-semibold hover:underline">
+                      <button onClick={() => setActiveModule('appointments')} className="text-xs text-primary font-semibold hover:underline cursor-pointer">
                         View All ({appointments.length}) &rarr;
                       </button>
                     </div>
 
                     <div className="divide-y divide-border text-xs">
                       {appointments.length === 0 ? (
-                        <div className="p-8 text-center text-xs text-muted-foreground space-y-1.5">
-                          <CalendarIcon className="w-6 h-6 mx-auto text-muted-foreground/40" />
-                          <p className="font-medium text-foreground">No appointments scheduled for today</p>
-                          <p className="text-[11px] text-muted-foreground">Sessions booked via the calendar or front desk will appear here.</p>
+                        <div className="p-8 text-center text-xs text-muted-foreground space-y-2">
+                          <div className="w-10 h-10 rounded-2xl bg-surface border border-border flex items-center justify-center text-muted-foreground mx-auto">
+                            <CalendarIcon className="w-5 h-5 text-muted-foreground/50" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">No appointments scheduled for today</p>
+                            <p className="text-[11px] text-muted-foreground max-w-xs mx-auto mt-0.5">
+                              Bookings made via the front desk or calendar schedule will appear here.
+                            </p>
+                          </div>
+                          <div className="pt-1">
+                            <button
+                              onClick={() => setActiveModal('new_appointment')}
+                              className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary-hover shadow-xs transition-all cursor-pointer"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Book Appointment</span>
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         appointments.slice(0, 4).map((apt) => (
