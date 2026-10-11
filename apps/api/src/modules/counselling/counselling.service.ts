@@ -69,22 +69,9 @@ export class CounsellingService {
           sessionNotesEnc: undefined,
         }));
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Counselling sessions fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-session-1',
-        patientId,
-        counsellorName: 'Counsellor Samuel Kioko',
-        sessionType: 'INDIVIDUAL',
-        scheduledAt: new Date().toISOString(),
-        durationMins: 60,
-        goalsAddressed: 'Triggers identification, CBT cognitive distortions, emotional regulation',
-        sessionNotes: 'Patient was responsive and explored family dynamics that lead to relapse.',
-        isAttended: true,
-      },
-    ];
+    return [];
   }
 }

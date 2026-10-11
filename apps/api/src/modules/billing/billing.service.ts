@@ -144,4 +144,32 @@ export class BillingService {
       status: 'PENDING_PIN_PROMPT',
     };
   }
+
+  async getInvoices() {
+    try {
+      if (this.prisma && this.prisma.invoice) {
+        return await this.prisma.invoice.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+        });
+      }
+    } catch (err) {
+      console.warn('Invoices fetch error:', err);
+    }
+    return [];
+  }
+
+  async getPayments() {
+    try {
+      if (this.prisma && this.prisma.payment) {
+        return await this.prisma.payment.findMany({
+          orderBy: { paymentDate: 'desc' },
+          take: 50,
+        });
+      }
+    } catch (err) {
+      console.warn('Payments fetch error:', err);
+    }
+    return [];
+  }
 }

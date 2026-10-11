@@ -288,6 +288,44 @@ export class ModelRepository {
     const res = await this.queryFn(sql, values);
     return res.rows[0] ? mapRow(res.rows[0]) : null;
   }
+
+  async count(args?: { where?: Record<string, any> }): Promise<number> {
+    const conditions: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (args?.where) {
+      for (const [k, v] of Object.entries(args.where)) {
+        if (v === undefined) continue;
+        const col = toSnake(k);
+        if (v === null) {
+          conditions.push(`"${col}" IS NULL`);
+        } else if (typeof v === 'object' && v !== null && !Array.isArray(v) && !(v instanceof Date)) {
+          if (v.contains !== undefined) {
+            conditions.push(`"${col}" ILIKE $${idx++}`);
+            values.push(`%${v.contains}%`);
+          } else if (v.in !== undefined && Array.isArray(v.in)) {
+            conditions.push(`"${col}" = ANY($${idx++})`);
+            values.push(v.in);
+          } else if (v.not !== undefined) {
+            conditions.push(`"${col}" != $${idx++}`);
+            values.push(v.not);
+          }
+        } else {
+          conditions.push(`"${col}" = $${idx++}`);
+          values.push(v);
+        }
+      }
+    }
+
+    let sql = `SELECT COUNT(*)::int as count FROM public."${this.tableName}"`;
+    if (conditions.length > 0) {
+      sql += ` WHERE ${conditions.join(' AND ')}`;
+    }
+
+    const res = await this.queryFn(sql, values);
+    return res.rows[0] ? parseInt(res.rows[0].count, 10) : 0;
+  }
 }
 
 @Injectable()

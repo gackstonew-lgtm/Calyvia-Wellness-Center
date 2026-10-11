@@ -46,27 +46,9 @@ export class DocumentsService {
           where: { patientId },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Patient consents fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-consent-1',
-        patientId,
-        consentType: 'DATA_PROCESSING_KDPA',
-        isGranted: true,
-        signatoryName: 'Mary Wanjiru Mwangi',
-        signedAt: new Date().toISOString(),
-      },
-      {
-        id: 'mock-consent-2',
-        patientId,
-        consentType: 'ADMISSION_AGREEMENT_AND_SEARCH_CONSENT',
-        isGranted: true,
-        signatoryName: 'James Mwangi',
-        signedAt: new Date().toISOString(),
-      },
-    ];
+    return [];
   }
 }

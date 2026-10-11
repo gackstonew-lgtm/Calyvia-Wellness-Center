@@ -73,19 +73,9 @@ export class DischargeService {
           orderBy: { dischargeDate: 'desc' },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Discharge records fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-discharge-1',
-        patientName: 'Peter Kamau',
-        dischargeDate: new Date().toISOString(),
-        signedByDoctor: 'Dr. Evelyn Wanjiku',
-        clinicalClearance: true,
-        financialClearance: true,
-      },
-    ];
+    return [];
   }
 }

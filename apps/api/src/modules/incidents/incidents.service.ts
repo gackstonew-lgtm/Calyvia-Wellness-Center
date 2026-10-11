@@ -58,22 +58,9 @@ export class IncidentsService {
           orderBy: { reportedAt: 'desc' },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Incident reports fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-inc-1',
-        incidentNumber: 'INC-2026-0012',
-        severity: 'MEDIUM',
-        category: 'CONTRABAND',
-        description: 'Vape device confiscated during visitor luggage screening',
-        immediateAction: 'Logged in contraband registry, surrendered to facility security',
-        reportedBy: 'Officer Kimani',
-        isResolved: true,
-        reportedAt: new Date().toISOString(),
-      },
-    ];
+    return [];
   }
 }

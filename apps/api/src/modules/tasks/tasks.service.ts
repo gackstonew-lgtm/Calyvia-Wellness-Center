@@ -50,27 +50,9 @@ export class TasksService {
           orderBy: { dueDate: 'asc' },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Tasks fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-task-1',
-        title: 'Conduct CIWA Vitals Check for Patient in Bed 02',
-        priority: 'URGENT',
-        status: 'PENDING',
-        dueDate: new Date(Date.now() + 1800000).toISOString(),
-        assignedToName: 'Nurse Faith Wangari',
-      },
-      {
-        id: 'mock-task-2',
-        title: 'Review weekly discharge readiness with MDT team',
-        priority: 'HIGH',
-        status: 'IN_PROGRESS',
-        dueDate: new Date(Date.now() + 86400000).toISOString(),
-        assignedToName: 'Dr. Evelyn Wanjiku',
-      },
-    ];
+    return [];
   }
 }

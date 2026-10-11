@@ -54,19 +54,9 @@ export class CommunicationService {
           take: 50,
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Communication logs fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-comm-1',
-        recipient: '+254722889900',
-        channel: 'SMS',
-        body: 'Dear Mary, reminder: Family Therapy session at Calyvia Wellness Center tomorrow at 10:00 AM.',
-        status: 'DELIVERED',
-        sentAt: new Date().toISOString(),
-      },
-    ];
+    return [];
   }
 }

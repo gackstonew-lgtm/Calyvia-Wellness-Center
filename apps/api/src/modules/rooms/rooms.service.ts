@@ -34,34 +34,10 @@ export class RoomsService {
           },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Rooms and beds fetch error:', err);
     }
-
-    return [
-      {
-        id: 'room-1',
-        roomNumber: 'DTX-01',
-        wardName: 'Ground Detox Ward',
-        roomType: 'DETOX_WARD',
-        dailyRateKES: 12000,
-        beds: [
-          { id: 'bed-1', bedNumber: 'Bed A', status: BedStatus.OCCUPIED, patientName: 'James Mwangi' },
-          { id: 'bed-2', bedNumber: 'Bed B', status: BedStatus.AVAILABLE },
-        ],
-      },
-      {
-        id: 'room-2',
-        roomNumber: 'HRZ-101',
-        wardName: 'Horizon Male Wing',
-        roomType: 'INPATIENT_MALE',
-        dailyRateKES: 8500,
-        beds: [
-          { id: 'bed-3', bedNumber: 'Bed 1', status: BedStatus.OCCUPIED, patientName: 'Brian Otieno' },
-          { id: 'bed-4', bedNumber: 'Bed 2', status: BedStatus.AVAILABLE },
-        ],
-      },
-    ];
+    return [];
   }
 
   async allocateBed(dto: AllocateBedDto) {

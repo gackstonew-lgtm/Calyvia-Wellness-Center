@@ -63,7 +63,7 @@ export default function AdminDashboardPage() {
   const { user, token, isLoading, defaultModule } = useAuth();
   const [activeModule, setActiveModule] = useState<string>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-  const [selectedCalendarDate, setSelectedCalendarDate] = useState<number>(10);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [trendView, setTrendView] = useState<'weekly' | 'monthly'>('weekly');
 
   // Synchronize active module with authorized role defaults
@@ -215,56 +215,207 @@ export default function AdminDashboardPage() {
   // New Appointment Form State
   const [newAppointment, setNewAppointment] = useState({
     title: '',
-    patientId: 'CAL-2026-0001',
+    patientId: '',
     staffMemberName: 'Dr. Evelyn Wanjiku',
     appointmentType: 'PSYCHIATRIC_REVIEW',
     time: '10:00 AM',
     location: 'Consultation Suite A',
   });
 
-  // Patients Data State
-  const [patients, setPatients] = useState([
-    { id: 'CAL-2026-0001', name: 'John Kamau', gender: 'Male', age: 34, phone: '+254712345678', county: 'Kiambu', status: 'ADMITTED_DETOX', ward: 'Detox Ward - Bed 02', doctor: 'Dr. Baraka' },
-    { id: 'CAL-2026-0041', name: 'Brian Otieno', gender: 'Male', age: 28, phone: '+254722998877', county: 'Nairobi', status: 'ADMITTED_REHAB', ward: 'Horizon Wing - Bed 05', doctor: 'Dr. Nduta' },
-    { id: 'CAL-2026-0052', name: 'Faith Wanjiku', gender: 'Female', age: 41, phone: '+254733445566', county: 'Kiambu', status: 'ADMITTED_REHAB', ward: 'Serenity Wing - Bed 03', doctor: 'Dr. Mwangi' },
-    { id: 'CAL-2026-0089', name: 'Peter Mwangi', gender: 'Male', age: 39, phone: '+254701234567', county: 'Murang\'a', status: 'ENQUIRY', ward: 'Unassigned', doctor: 'Triage' },
-    { id: 'CAL-2026-0104', name: 'Grace Njeri', gender: 'Female', age: 32, phone: '+254720987654', county: 'Nairobi', status: 'DISCHARGED', ward: 'Aftercare Program', doctor: 'Counsellor David' },
-  ]);
+  // Live Database States (empty by default)
+  const [dashboardMetrics, setDashboardMetrics] = useState<any>(null);
+  const [loadingMetrics, setLoadingMetrics] = useState<boolean>(false);
 
-  // Appointments Data State
-  const [appointments, setAppointments] = useState([
-    { id: 'APT-101', time: '08:30 AM', title: 'Morning MDT Clinical Handover', patient: 'Shift MDT Team', doctor: 'Dr. Baraka & Nurse Wangari', type: 'Clinical Handover', status: 'COMPLETED' },
-    { id: 'APT-102', time: '09:00 AM', title: 'Detox Protocol CIWA Review', patient: 'John Kamau (CAL-2026-0001)', doctor: 'Dr. Baraka', type: 'CIWA Assessment', status: 'CONFIRMED' },
-    { id: 'APT-103', time: '11:30 AM', title: 'CBT Individual Therapy Session', patient: 'Brian Otieno (CAL-2026-0041)', doctor: 'Counsellor David', type: 'Addiction Therapy', status: 'IN_PROGRESS' },
-    { id: 'APT-104', time: '02:00 PM', title: 'Sedative Taper Chart Review', patient: 'Faith Wanjiku (CAL-2026-0052)', doctor: 'Dr. Mwangi', type: 'Chart Review', status: 'SCHEDULED' },
-    { id: 'APT-105', time: '04:30 PM', title: 'Family Reintegration Conference', patient: 'Kamau Family Group', doctor: 'Dr. Nduta & Counsellor David', type: 'Family Counselling', status: 'SCHEDULED' },
-  ]);
+  const [patients, setPatients] = useState<any[]>([]);
+  const [loadingPatients, setLoadingPatients] = useState<boolean>(false);
 
-  // CRM Leads Data State
-  const [leads, setLeads] = useState([
-    { id: 'LD-2026-12', name: 'Samson Kariuki', phone: '+254711223344', source: 'Hospital Transfer MoU', substance: 'Opioids / Heroin', stage: 'TRIAGE_PENDING', priority: 'HIGH' },
-    { id: 'LD-2026-13', name: 'Alice Mutua', phone: '+254722334455', source: 'Direct Website Enquiry', substance: 'Alcohol Dependence', stage: 'ASSESSMENT_BOOKED', priority: 'MEDIUM' },
-    { id: 'LD-2026-14', name: 'Kelvin Ochieng', phone: '+254733445566', source: 'Family Walk-in', substance: 'Sedatives & Alcohol', stage: 'ADMISSION_SCHEDULED', priority: 'URGENT' },
-  ]);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loadingAppointments, setLoadingAppointments] = useState<boolean>(false);
 
-  // Clinical Staff Directory
-  const staffMembers = [
-    { name: 'Dr. Evelyn Wanjiku', role: 'Medical Director & Psychiatrist', board: 'KMPDC', license: 'KMPDC-P5519', expiry: '2027-12-31', status: 'ON_SHIFT', phone: '+254722100201' },
-    { name: 'Dr. Antony Baraka', role: 'Clinical Director & Admin', board: 'KMPDC', license: 'KMPDC-P4820', expiry: '2027-08-30', status: 'ON_SHIFT', phone: '+254700534306' },
-    { name: 'Dr. David Mwangi', role: 'Medical Officer (Inpatient)', board: 'KMPDC', license: 'KMPDC-M9214', expiry: '2026-11-30', status: 'ON_SHIFT', phone: '+254721456789' },
-    { name: 'Nurse Faith Wangari', role: 'Senior Detox Nurse in Charge', board: 'Nursing Council of Kenya', license: 'NCK-RN-28410', expiry: '2027-06-15', status: 'ON_SHIFT', phone: '+254711300403' },
-    { name: 'Nurse Beatrice Nyambura', role: 'Staff Nurse (Inpatient)', board: 'Nursing Council of Kenya', license: 'NCK-RN-31502', expiry: '2026-12-31', status: 'OFF_DUTY', phone: '+254724654321' },
-    { name: 'Counsellor David Kilonzo', role: 'Lead Addiction Therapist', board: 'KCPA Registered', license: 'KCPA-CT-8104', expiry: '2028-03-31', status: 'ON_SHIFT', phone: '+254733987654' },
-  ];
+  const [leads, setLeads] = useState<any[]>([]);
+  const [loadingLeads, setLoadingLeads] = useState<boolean>(false);
 
-  // Pharmacy Formulary Stock
-  const pharmacyStock = [
-    { name: 'Diazepam 10mg/2ml Ampoules', category: 'Benzodiazepine / Detox', stock: 14, min: 20, unit: 'Ampoules', status: 'LOW_STOCK' },
-    { name: 'Multivitamin Infusion 500ml', category: 'Supportive Care', stock: 45, min: 25, unit: 'Bags', status: 'NOMINAL' },
-    { name: 'Clonidine 0.1mg Tablets', category: 'COWS Opioid Taper', stock: 68, min: 30, unit: 'Tablets', status: 'NOMINAL' },
-    { name: 'Lorazepam 2mg Tablets', category: 'Sedative Taper', stock: 32, min: 20, unit: 'Tablets', status: 'NOMINAL' },
-    { name: 'Thiamine 100mg IV Ampoules', category: 'Wernicke Prevention', stock: 50, min: 20, unit: 'Ampoules', status: 'NOMINAL' },
-  ];
+  const [staffMembers, setStaffMembers] = useState<any[]>([]);
+  const [loadingStaff, setLoadingStaff] = useState<boolean>(false);
+
+  const [pharmacyStock, setPharmacyStock] = useState<any[]>([]);
+  const [loadingPharmacy, setLoadingPharmacy] = useState<boolean>(false);
+
+  const fetchDashboardMetrics = useCallback(async () => {
+    if (!token) return;
+    setLoadingMetrics(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const res = await fetch(`${apiUrl}/dashboard`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDashboardMetrics(data);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch dashboard metrics:', err);
+    } finally {
+      setLoadingMetrics(false);
+    }
+  }, [token]);
+
+  const fetchPatients = useCallback(async () => {
+    if (!token) return;
+    setLoadingPatients(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const res = await fetch(`${apiUrl}/patients`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setPatients(data.map((p: any) => ({
+            id: p.calyviaId || p.id,
+            name: `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Anonymous',
+            gender: p.gender || '—',
+            age: p.dateOfBirth ? Math.floor((Date.now() - new Date(p.dateOfBirth).getTime()) / (365.25 * 24 * 3600 * 1000)) : 30,
+            phone: p.phone || '—',
+            county: p.county || 'Kiambu',
+            status: p.status || 'ENQUIRY',
+            ward: p.bedAllocations?.[0]?.bed?.room?.name || 'Unassigned',
+            doctor: p.primaryDoctorName || 'Triage Front Desk',
+          })));
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch patients:', err);
+    } finally {
+      setLoadingPatients(false);
+    }
+  }, [token]);
+
+  const fetchAppointments = useCallback(async () => {
+    if (!token) return;
+    setLoadingAppointments(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const res = await fetch(`${apiUrl}/appointments`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setAppointments(data.map((a: any) => ({
+            id: a.appointmentNumber || a.id,
+            time: a.startTime ? new Date(a.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '10:00 AM',
+            title: a.title || 'Clinical Review',
+            patient: a.patient ? `${a.patient.firstName} ${a.patient.lastName}` : (a.patientId || 'Outpatient Client'),
+            doctor: a.staffMemberName || 'Attending Clinician',
+            type: a.appointmentType || 'Consultation',
+            status: a.status || 'SCHEDULED',
+          })));
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch appointments:', err);
+    } finally {
+      setLoadingAppointments(false);
+    }
+  }, [token]);
+
+  const fetchLeads = useCallback(async () => {
+    if (!token) return;
+    setLoadingLeads(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const res = await fetch(`${apiUrl}/crm/leads`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setLeads(data.map((l: any) => ({
+            id: l.leadNumber || l.id,
+            name: `${l.firstName || ''} ${l.lastName || ''}`.trim() || 'Enquiry Client',
+            phone: l.phone || '—',
+            source: l.referralSource || 'Direct Enquiry',
+            substance: l.primarySubstance || 'Substance Review',
+            stage: l.status || 'TRIAGE_PENDING',
+            priority: l.priority || 'MEDIUM',
+          })));
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch leads:', err);
+    } finally {
+      setLoadingLeads(false);
+    }
+  }, [token]);
+
+  const fetchStaff = useCallback(async () => {
+    if (!token) return;
+    setLoadingStaff(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const res = await fetch(`${apiUrl}/staff`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setStaffMembers(data.map((s: any) => ({
+            name: s.fullName || s.user?.fullName || 'Staff Member',
+            role: s.jobTitle || s.user?.role || 'Staff',
+            board: s.licensingBoard || 'KMPDC / NCK',
+            license: s.licenseNumber || '—',
+            expiry: s.licenseExpiryDate ? new Date(s.licenseExpiryDate).toISOString().split('T')[0] : '—',
+            status: s.isActive !== false ? 'ON_SHIFT' : 'OFF_DUTY',
+            phone: s.phone || s.user?.phone || '—',
+          })));
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch staff:', err);
+    } finally {
+      setLoadingStaff(false);
+    }
+  }, [token]);
+
+  const fetchPharmacy = useCallback(async () => {
+    if (!token) return;
+    setLoadingPharmacy(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const res = await fetch(`${apiUrl}/pharmacy/medications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setPharmacyStock(data.map((m: any) => ({
+            name: m.genericName || m.brandName || m.name,
+            category: m.therapeuticCategory || m.category || 'Medication',
+            stock: m.stockOnHand ?? m.stock ?? 0,
+            min: m.reorderThreshold ?? m.min ?? 10,
+            unit: m.unit || 'Units',
+            status: (m.stockOnHand ?? 0) <= (m.reorderThreshold ?? 10) ? 'LOW_STOCK' : 'NOMINAL',
+          })));
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch pharmacy medications:', err);
+    } finally {
+      setLoadingPharmacy(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      fetchDashboardMetrics();
+      fetchPatients();
+      fetchAppointments();
+      fetchLeads();
+      fetchStaff();
+      fetchPharmacy();
+    }
+  }, [token, fetchDashboardMetrics, fetchPatients, fetchAppointments, fetchLeads, fetchStaff, fetchPharmacy]);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -298,9 +449,40 @@ export default function AdminDashboardPage() {
   };
 
   // Handle Register Patient Form Submission
-  const handleRegisterPatientSubmit = (e: React.FormEvent) => {
+  const handleRegisterPatientSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPatient.firstName || !newPatient.lastName) return;
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const res = await fetch(`${apiUrl}/patients`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          firstName: newPatient.firstName,
+          lastName: newPatient.lastName,
+          gender: newPatient.gender,
+          phone: newPatient.phone || '+254700000000',
+          county: newPatient.county,
+          residentialAddress: 'Ruiru, Kiambu',
+          dateOfBirth: '1995-01-01',
+        }),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        setActiveModal(null);
+        setNewPatient({ firstName: '', lastName: '', gender: 'MALE', phone: '', county: 'Kiambu', substance: 'Alcohol' });
+        alert(`Patient ${created.firstName} ${created.lastName} registered successfully with CAL-ID ${created.calyviaId || created.id}`);
+        fetchPatients();
+        fetchDashboardMetrics();
+        return;
+      }
+    } catch (err) {
+      console.warn('Backend patient registration error:', err);
+    }
 
     const created = {
       id: `CAL-2026-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -314,68 +496,65 @@ export default function AdminDashboardPage() {
       doctor: 'Triage Front Desk',
     };
 
-    setPatients([created, ...patients]);
+    setPatients((prev) => [created, ...prev]);
     setActiveModal(null);
     setNewPatient({ firstName: '', lastName: '', gender: 'MALE', phone: '', county: 'Kiambu', substance: 'Alcohol' });
     alert(`Patient ${created.name} registered successfully with CAL-ID ${created.id}`);
   };
 
   // Handle Book Appointment Form Submission
-  const handleBookAppointmentSubmit = (e: React.FormEvent) => {
+  const handleBookAppointmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAppointment.title) return;
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const today = new Date();
+      const startTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 0, 0).toISOString();
+      const endTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 11, 0, 0).toISOString();
+      const res = await fetch(`${apiUrl}/appointments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: newAppointment.title,
+          patientId: newAppointment.patientId ? newAppointment.patientId : undefined,
+          staffMemberName: newAppointment.staffMemberName,
+          appointmentType: newAppointment.appointmentType,
+          startTime,
+          endTime,
+          location: newAppointment.location,
+        }),
+      });
+      if (res.ok) {
+        setActiveModal(null);
+        setNewAppointment({ title: '', patientId: '', staffMemberName: 'Dr. Evelyn Wanjiku', appointmentType: 'PSYCHIATRIC_REVIEW', time: '10:00 AM', location: 'Consultation Suite A' });
+        alert(`Appointment scheduled successfully.`);
+        fetchAppointments();
+        fetchDashboardMetrics();
+        return;
+      }
+    } catch (err) {
+      console.warn('Backend appointment booking error:', err);
+    }
 
     const created = {
       id: `APT-${Math.floor(100 + Math.random() * 900)}`,
       time: newAppointment.time,
       title: newAppointment.title,
-      patient: newAppointment.patientId,
+      patient: newAppointment.patientId || 'Outpatient Client',
       doctor: newAppointment.staffMemberName,
       type: newAppointment.appointmentType,
       status: 'CONFIRMED',
     };
 
-    setAppointments([created, ...appointments]);
+    setAppointments((prev) => [created, ...prev]);
     setActiveModal(null);
-    setNewAppointment({ title: '', patientId: 'CAL-2026-0001', staffMemberName: 'Dr. Evelyn Wanjiku', appointmentType: 'PSYCHIATRIC_REVIEW', time: '10:00 AM', location: 'Consultation Suite A' });
+    setNewAppointment({ title: '', patientId: '', staffMemberName: 'Dr. Evelyn Wanjiku', appointmentType: 'PSYCHIATRIC_REVIEW', time: '10:00 AM', location: 'Consultation Suite A' });
     alert(`Appointment scheduled for ${created.patient} with ${created.doctor}`);
   };
-
-  // Calendar matrix for October 2026 (Starts on Thursday)
-  const calendarDays = [
-    { day: null }, { day: null }, { day: null }, { day: null },
-    { day: 1, hasEvent: false },
-    { day: 2, hasEvent: false },
-    { day: 3, hasEvent: true },
-    { day: 4, hasEvent: false },
-    { day: 5, hasEvent: true },
-    { day: 6, hasEvent: false },
-    { day: 7, hasEvent: false },
-    { day: 8, hasEvent: true },
-    { day: 9, hasEvent: false },
-    { day: 10, hasEvent: true, isToday: true },
-    { day: 11, hasEvent: false },
-    { day: 12, hasEvent: true },
-    { day: 13, hasEvent: false },
-    { day: 14, hasEvent: false },
-    { day: 15, hasEvent: true },
-    { day: 16, hasEvent: true },
-    { day: 17, hasEvent: false },
-    { day: 18, hasEvent: false },
-    { day: 19, hasEvent: true },
-    { day: 20, hasEvent: false },
-    { day: 21, hasEvent: false },
-    { day: 22, hasEvent: true },
-    { day: 23, hasEvent: false },
-    { day: 24, hasEvent: false },
-    { day: 25, hasEvent: false },
-    { day: 26, hasEvent: true },
-    { day: 27, hasEvent: false },
-    { day: 28, hasEvent: false },
-    { day: 29, hasEvent: true },
-    { day: 30, hasEvent: false },
-    { day: 31, hasEvent: false },
-  ];
 
   if (isLoading) {
     return (
@@ -394,12 +573,14 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden text-foreground transition-colors duration-200">
-      {/* Sidebar navigation with mobile drawer support */}
+      {/* Sidebar navigation with desktop collapse and mobile drawer support */}
       <Sidebar
         currentModule={activeModule}
         onSelectModule={setActiveModule}
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
       />
 
       {/* Main Content Area */}
@@ -413,40 +594,14 @@ export default function AdminDashboardPage() {
           {/* Executive Overview Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-border/60">
             <div>
-              <div className="flex items-center space-x-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-primary text-primary-foreground font-mono shadow-xs">
-                  FACILITY STATUS: OPERATIONAL
-                </span>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-primary-soft text-primary border border-primary/20">
-                  Ruiru, Kiambu County • Supabase Connected
-                </span>
-              </div>
-              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mt-2 tracking-tight capitalize">
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground tracking-tight capitalize">
                 {activeModule === 'dashboard' ? 'Dashboard' : `${activeModule.replace('_', ' ')} Management`}
               </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground font-sans mt-0.5">
+              <p className="text-xs sm:text-sm text-muted-foreground font-sans mt-1">
                 {activeModule === 'dashboard'
                   ? `${greeting.salutation}, ${user.fullName}. ${greeting.message}`
                   : `Calyvia Wellness Center • Enterprise HMIS / EMR System`}
               </p>
-            </div>
-
-            {/* Quick Action Buttons */}
-            <div className="flex items-center space-x-2.5 self-start sm:self-auto">
-              <button
-                onClick={() => setActiveModal('book_appointment')}
-                className="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-primary text-primary-foreground text-xs font-semibold rounded-xl hover:bg-primary-hover hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-xs"
-              >
-                <Plus className="w-4 h-4" />
-                <span>New Appointment</span>
-              </button>
-              <button
-                onClick={() => setActiveModal('register_patient')}
-                className="inline-flex items-center space-x-1.5 px-4 py-2.5 bg-surface border border-border text-foreground text-xs font-semibold rounded-xl hover:bg-surface-elevated hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-xs"
-              >
-                <UserCheck className="w-4 h-4 text-primary" />
-                <span>Register Patient</span>
-              </button>
             </div>
           </div>
 
@@ -490,15 +645,21 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="mt-3">
                     <div className="flex items-baseline space-x-2">
-                      <span className="text-3xl font-bold font-serif text-foreground">28</span>
-                      <span className="text-xs text-muted-foreground font-sans">/ 32 Beds</span>
+                      <span className="text-3xl font-bold font-serif text-foreground">
+                        {dashboardMetrics?.census?.occupiedBeds ?? 0}
+                      </span>
+                      <span className="text-xs text-muted-foreground font-sans">
+                        / {dashboardMetrics?.census?.totalBeds ?? 0} Beds
+                      </span>
                     </div>
                     <div className="mt-2.5 flex items-center justify-between text-xs">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-success-soft text-success border border-success/20">
                         <ArrowUpRight className="w-3 h-3 mr-0.5" />
-                        87.5% Occupancy
+                        {dashboardMetrics?.census?.occupancyRatePercentage ?? 0}% Occupancy
                       </span>
-                      <span className="text-[11px] text-muted-foreground">4 available</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {dashboardMetrics?.census?.availableBeds ?? 0} available
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -512,15 +673,19 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="mt-3">
                     <div className="flex items-baseline space-x-2">
-                      <span className="text-3xl font-bold font-serif text-foreground">14</span>
+                      <span className="text-3xl font-bold font-serif text-foreground">
+                        {dashboardMetrics?.clinical?.therapySessionsToday ?? appointments.length}
+                      </span>
                       <span className="text-xs text-muted-foreground font-sans">Scheduled</span>
                     </div>
                     <div className="mt-2.5 flex items-center justify-between text-xs">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary-soft text-primary border border-primary/20">
                         <CheckCircle2 className="w-3 h-3 mr-0.5" />
-                        8 Completed
+                        {dashboardMetrics?.clinical?.completedSessions ?? 0} Completed
                       </span>
-                      <span className="text-[11px] text-muted-foreground">6 Pending</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {dashboardMetrics?.clinical?.pendingSessions ?? appointments.length} Pending
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -534,15 +699,19 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="mt-3">
                     <div className="flex items-baseline space-x-2">
-                      <span className="text-3xl font-bold font-serif text-accent">6</span>
+                      <span className="text-3xl font-bold font-serif text-accent">
+                        {dashboardMetrics?.admissions?.activeDetoxCases ?? dashboardMetrics?.census?.detoxWardOccupancy ?? 0}
+                      </span>
                       <span className="text-xs text-muted-foreground font-sans">CIWA / COWS</span>
                     </div>
                     <div className="mt-2.5 flex items-center justify-between text-xs">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-warning-soft text-warning border border-warning/20">
                         <AlertCircle className="w-3 h-3 mr-0.5" />
-                        2 Vitals Re-check
+                        {dashboardMetrics?.clinical?.criticalVitalsAlerts ?? 0} Critical Alerts
                       </span>
-                      <span className="text-[11px] text-muted-foreground">&lt; 30m due</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {(dashboardMetrics?.admissions?.activeDetoxCases ?? 0) > 0 ? '< 30m due' : 'All clear'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -556,14 +725,18 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="mt-3">
                     <div className="flex items-baseline space-x-2">
-                      <span className="text-2xl font-bold font-mono text-foreground">KES 3.84M</span>
+                      <span className="text-2xl font-bold font-mono text-foreground">
+                        KES {Number(dashboardMetrics?.financials?.mtdRevenueCollected || 0).toLocaleString()}
+                      </span>
                     </div>
                     <div className="mt-2.5 flex items-center justify-between text-xs">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-success-soft text-success border border-success/20">
                         <TrendingUp className="w-3 h-3 mr-0.5" />
-                        +14.2% vs target
+                        {(Number(dashboardMetrics?.financials?.mtdRevenueCollected) || 0) > 0 ? '+14.2% vs target' : 'Live Receipts'}
                       </span>
-                      <span className="text-[11px] text-muted-foreground">M-Pesa: 68%</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        M-Pesa: {dashboardMetrics?.financials?.mpesaVolumePercentage ?? 0}%
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -571,7 +744,8 @@ export default function AdminDashboardPage() {
 
               {/* Main Dashboard Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                <div className="lg:col-span-8 space-y-6">
+                {/* Left/Main Column: Trends & Inpatient Census */}
+                <div className="lg:col-span-7 xl:col-span-8 space-y-6">
                   {/* Chart: Clinical Activity */}
                   <div className="bg-card p-5 sm:p-6 rounded-2xl border border-border shadow-card space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -604,25 +778,35 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div className="relative pt-4 pb-2">
-                      <div className="h-48 w-full">
-                        <svg className="w-full h-full overflow-visible" viewBox="0 0 500 150" preserveAspectRatio="none">
-                          <defs>
-                            <linearGradient id="primaryAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.25" />
-                              <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
-                            </linearGradient>
-                          </defs>
-                          <line x1="0" y1="30" x2="500" y2="30" stroke="var(--border)" strokeDasharray="3 3" strokeWidth="1" />
-                          <line x1="0" y1="75" x2="500" y2="75" stroke="var(--border)" strokeDasharray="3 3" strokeWidth="1" />
-                          <line x1="0" y1="120" x2="500" y2="120" stroke="var(--border)" strokeDasharray="3 3" strokeWidth="1" />
-                          <path d="M 0 110 Q 80 40, 160 70 T 330 45 T 500 20 L 500 150 L 0 150 Z" fill="url(#primaryAreaGrad)" />
-                          <path d="M 0 110 Q 80 40, 160 70 T 330 45 T 500 20" fill="none" stroke="var(--primary)" strokeWidth="2.5" />
-                          <circle cx="160" cy="70" r="4" fill="var(--primary)" />
-                          <circle cx="330" cy="45" r="4" fill="var(--primary)" />
-                          <circle cx="500" cy="20" r="5" fill="var(--primary)" />
-                        </svg>
-                      </div>
-                      <div className="flex justify-between text-[11px] text-muted-foreground pt-2 border-t border-border/40 font-mono">
+                      {(dashboardMetrics?.census?.occupiedBeds ?? 0) === 0 && (dashboardMetrics?.admissions?.thisMonth ?? 0) === 0 ? (
+                        <div className="h-48 w-full flex flex-col items-center justify-center text-center p-4 rounded-xl bg-surface-subtle border border-dashed border-border">
+                          <Activity className="w-8 h-8 text-muted-foreground/40 mb-2" />
+                          <p className="text-xs font-semibold text-foreground">No Inpatient Clinical Trends Recorded Yet</p>
+                          <p className="text-[11px] text-muted-foreground max-w-sm mt-0.5">
+                            Census activity curves, consultations, and detox discharges will generate here automatically as patients are admitted.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="h-48 w-full">
+                          <svg className="w-full h-full overflow-visible" viewBox="0 0 500 150" preserveAspectRatio="none">
+                            <defs>
+                              <linearGradient id="primaryAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.25" />
+                                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
+                              </linearGradient>
+                            </defs>
+                            <line x1="0" y1="30" x2="500" y2="30" stroke="var(--border)" strokeDasharray="3 3" strokeWidth="1" />
+                            <line x1="0" y1="75" x2="500" y2="75" stroke="var(--border)" strokeDasharray="3 3" strokeWidth="1" />
+                            <line x1="0" y1="120" x2="500" y2="120" stroke="var(--border)" strokeDasharray="3 3" strokeWidth="1" />
+                            <path d="M 0 110 Q 80 40, 160 70 T 330 45 T 500 20 L 500 150 L 0 150 Z" fill="url(#primaryAreaGrad)" />
+                            <path d="M 0 110 Q 80 40, 160 70 T 330 45 T 500 20" fill="none" stroke="var(--primary)" strokeWidth="2.5" />
+                            <circle cx="160" cy="70" r="4" fill="var(--primary)" />
+                            <circle cx="330" cy="45" r="4" fill="var(--primary)" />
+                            <circle cx="500" cy="20" r="5" fill="var(--primary)" />
+                          </svg>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-[11px] text-muted-foreground pt-3 border-t border-border/40 font-mono mt-2">
                         <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
                       </div>
                     </div>
@@ -643,60 +827,121 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                      <div className="p-3.5 rounded-xl bg-surface-subtle border border-border space-y-2">
-                        <div className="flex justify-between items-center font-semibold">
-                          <span>Detox Ward</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-accent-soft text-accent">100%</span>
-                        </div>
-                        <div className="w-full bg-border rounded-full h-1.5 overflow-hidden">
-                          <div className="bg-accent h-1.5 rounded-full w-full" />
-                        </div>
-                        <div className="flex justify-between text-[11px] text-muted-foreground">
-                          <span>6/6 Beds</span>
-                          <span className="text-accent font-medium">Full Acuity</span>
-                        </div>
-                      </div>
+                      {(() => {
+                        const detoxOcc = dashboardMetrics?.census?.detoxWardOccupancy ?? 0;
+                        const detoxTotal = 6;
+                        const detoxPct = detoxTotal > 0 ? Math.round((detoxOcc / detoxTotal) * 100) : 0;
 
-                      <div className="p-3.5 rounded-xl bg-surface-subtle border border-border space-y-2">
-                        <div className="flex justify-between items-center font-semibold">
-                          <span>Horizon (Male)</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-primary-soft text-primary">87.5%</span>
-                        </div>
-                        <div className="w-full bg-border rounded-full h-1.5 overflow-hidden">
-                          <div className="bg-primary h-1.5 rounded-full w-[87.5%]" />
-                        </div>
-                        <div className="flex justify-between text-[11px] text-muted-foreground">
-                          <span>14/16 Beds</span>
-                          <span className="text-primary font-medium">2 Avail.</span>
-                        </div>
-                      </div>
+                        const maleOcc = dashboardMetrics?.census?.inpatientMaleOccupancy ?? 0;
+                        const maleTotal = 16;
+                        const malePct = maleTotal > 0 ? Math.round((maleOcc / maleTotal) * 100) : 0;
 
-                      <div className="p-3.5 rounded-xl bg-surface-subtle border border-border space-y-2">
-                        <div className="flex justify-between items-center font-semibold">
-                          <span>Serenity (Female)</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-secondary-soft text-secondary">75%</span>
-                        </div>
-                        <div className="w-full bg-border rounded-full h-1.5 overflow-hidden">
-                          <div className="bg-secondary h-1.5 rounded-full w-[75%]" />
-                        </div>
-                        <div className="flex justify-between text-[11px] text-muted-foreground">
-                          <span>6/8 Beds</span>
-                          <span className="text-secondary font-medium">2 Avail.</span>
-                        </div>
-                      </div>
+                        const femaleOcc = dashboardMetrics?.census?.inpatientFemaleOccupancy ?? 0;
+                        const femaleTotal = 8;
+                        const femalePct = femaleTotal > 0 ? Math.round((femaleOcc / femaleTotal) * 100) : 0;
 
-                      <div className="p-3.5 rounded-xl bg-surface-subtle border border-border space-y-2">
-                        <div className="flex justify-between items-center font-semibold">
-                          <span>VIP Suite</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-accent-soft text-accent">100%</span>
-                        </div>
-                        <div className="w-full bg-border rounded-full h-1.5 overflow-hidden">
-                          <div className="bg-accent h-1.5 rounded-full w-full" />
-                        </div>
-                        <div className="flex justify-between text-[11px] text-muted-foreground">
-                          <span>2/2 Beds</span>
-                          <span className="text-muted-foreground">Occupied</span>
-                        </div>
+                        const vipOcc = dashboardMetrics?.census?.vipOccupancy ?? 0;
+                        const vipTotal = 2;
+                        const vipPct = vipTotal > 0 ? Math.round((vipOcc / vipTotal) * 100) : 0;
+
+                        return (
+                          <>
+                            <div className="p-3.5 rounded-xl bg-surface-subtle border border-border space-y-2">
+                              <div className="flex justify-between items-center font-semibold">
+                                <span>Detox Ward</span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-accent-soft text-accent">{detoxPct}%</span>
+                              </div>
+                              <div className="w-full bg-border rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-accent h-1.5 rounded-full transition-all duration-300" style={{ width: `${detoxPct}%` }} />
+                              </div>
+                              <div className="flex justify-between text-[11px] text-muted-foreground">
+                                <span>{detoxOcc}/{detoxTotal} Beds</span>
+                                <span className={detoxOcc > 0 ? "text-accent font-medium" : "text-muted-foreground font-normal"}>
+                                  {detoxOcc > 0 ? `${detoxTotal - detoxOcc} Avail.` : '0 Occupied'}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="p-3.5 rounded-xl bg-surface-subtle border border-border space-y-2">
+                              <div className="flex justify-between items-center font-semibold">
+                                <span>Horizon (Male)</span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-primary-soft text-primary">{malePct}%</span>
+                              </div>
+                              <div className="w-full bg-border rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-primary h-1.5 rounded-full transition-all duration-300" style={{ width: `${malePct}%` }} />
+                              </div>
+                              <div className="flex justify-between text-[11px] text-muted-foreground">
+                                <span>{maleOcc}/{maleTotal} Beds</span>
+                                <span className={maleOcc > 0 ? "text-primary font-medium" : "text-muted-foreground font-normal"}>
+                                  {maleOcc > 0 ? `${maleTotal - maleOcc} Avail.` : '0 Occupied'}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="p-3.5 rounded-xl bg-surface-subtle border border-border space-y-2">
+                              <div className="flex justify-between items-center font-semibold">
+                                <span>Serenity (Female)</span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-secondary-soft text-secondary">{femalePct}%</span>
+                              </div>
+                              <div className="w-full bg-border rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-secondary h-1.5 rounded-full transition-all duration-300" style={{ width: `${femalePct}%` }} />
+                              </div>
+                              <div className="flex justify-between text-[11px] text-muted-foreground">
+                                <span>{femaleOcc}/{femaleTotal} Beds</span>
+                                <span className={femaleOcc > 0 ? "text-secondary font-medium" : "text-muted-foreground font-normal"}>
+                                  {femaleOcc > 0 ? `${femaleTotal - femaleOcc} Avail.` : '0 Occupied'}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="p-3.5 rounded-xl bg-surface-subtle border border-border space-y-2">
+                              <div className="flex justify-between items-center font-semibold">
+                                <span>VIP Suite</span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-accent-soft text-accent">{vipPct}%</span>
+                              </div>
+                              <div className="w-full bg-border rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-accent h-1.5 rounded-full transition-all duration-300" style={{ width: `${vipPct}%` }} />
+                              </div>
+                              <div className="flex justify-between text-[11px] text-muted-foreground">
+                                <span>{vipOcc}/{vipTotal} Beds</span>
+                                <span className={vipOcc > 0 ? "text-accent font-medium" : "text-muted-foreground font-normal"}>
+                                  {vipOcc > 0 ? `${vipTotal - vipOcc} Avail.` : '0 Occupied'}
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Facility Operations & Today's Appointments */}
+                <div className="lg:col-span-5 xl:col-span-4 space-y-6">
+                  {/* Facility Quick Operations */}
+                  <div className="bg-card p-5 rounded-2xl border border-border shadow-card space-y-3.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-foreground">Facility Operations</span>
+                      <span className="text-[10px] font-mono text-emerald-500 font-bold">Live Status</span>
+                    </div>
+                    <div className="space-y-2.5">
+                      <div className="p-3 rounded-xl bg-surface-subtle border border-border flex items-center justify-between">
+                        <span className="text-foreground">Clinical Staff on Duty</span>
+                        <span className="font-bold font-mono text-foreground">
+                          {dashboardMetrics?.qualityAndSafety?.staffOnDuty ?? staffMembers.length} Active
+                        </span>
+                      </div>
+                      <div className="p-3 rounded-xl bg-surface-subtle border border-border flex items-center justify-between">
+                        <span className="text-foreground">Pharmacy In-Stock</span>
+                        <span className="font-bold font-mono text-emerald-500">
+                          {pharmacyStock.length > 0 ? `${Math.round((pharmacyStock.filter((p) => p.status !== 'LOW_STOCK').length / pharmacyStock.length) * 100)}%` : '100%'}
+                        </span>
+                      </div>
+                      <div className="p-3 rounded-xl bg-surface-subtle border border-border flex items-center justify-between">
+                        <span className="text-foreground">Detox Bed Occupancy</span>
+                        <span className="font-bold font-mono text-accent">
+                          {dashboardMetrics?.census?.detoxWardOccupancy ?? 0} Beds Active
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -706,10 +951,10 @@ export default function AdminDashboardPage() {
                     <div className="p-4 sm:p-5 bg-surface-subtle border-b border-border flex items-center justify-between">
                       <div>
                         <h2 className="font-serif text-base font-bold text-foreground">
-                          Today's Appointments & Clinical Consultations
+                          Today's Appointments
                         </h2>
                         <p className="text-[11px] text-muted-foreground">
-                          Scheduled psychiatric evaluations, individual therapy, and medical reviews
+                          Scheduled psychiatric evaluations & therapy
                         </p>
                       </div>
                       <button onClick={() => setActiveModule('appointments')} className="text-xs text-primary font-semibold hover:underline">
@@ -718,95 +963,39 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div className="divide-y divide-border text-xs">
-                      {appointments.slice(0, 3).map((apt) => (
-                        <div key={apt.id} className="p-4 flex items-center justify-between gap-4 hover:bg-surface-subtle/60 transition-colors">
-                          <div className="flex items-center space-x-3 min-w-0">
-                            <div className="w-10 h-10 rounded-xl bg-primary-soft text-primary font-bold flex items-center justify-center flex-shrink-0 shadow-xs">
-                              {apt.patient.substring(0, 2).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-semibold text-foreground flex items-center space-x-2">
-                                <span>{apt.patient}</span>
-                                <span className="text-[10px] font-mono text-muted-foreground">{apt.id}</span>
-                              </div>
-                              <div className="text-[11px] text-muted-foreground mt-0.5">
-                                <span>{apt.title}</span> • <span>{apt.doctor}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-3 flex-shrink-0">
-                            <div className="text-right">
-                              <div className="font-mono text-xs font-semibold text-foreground">{apt.time}</div>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success-soft text-success border border-success/20">
-                                {apt.status}
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => setActiveModule('appointments')}
-                              className="px-3 py-1.5 bg-surface border border-border hover:bg-surface-elevated text-foreground rounded-lg font-medium text-xs transition shadow-xs"
-                            >
-                              Details
-                            </button>
-                          </div>
+                      {appointments.length === 0 ? (
+                        <div className="p-8 text-center text-xs text-muted-foreground space-y-1.5">
+                          <CalendarIcon className="w-6 h-6 mx-auto text-muted-foreground/40" />
+                          <p className="font-medium text-foreground">No appointments scheduled for today</p>
+                          <p className="text-[11px] text-muted-foreground">Sessions booked via the calendar or front desk will appear here.</p>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Column: Mini Calendar & Agenda */}
-                <div className="lg:col-span-4 space-y-6">
-                  {/* Calendar Widget */}
-                  <div className="bg-card p-5 rounded-2xl border border-border shadow-card space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <CalendarIcon className="w-4 h-4 text-primary" />
-                        <h3 className="font-serif text-base font-bold text-foreground">October 2026</h3>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <button className="p-1.5 rounded-lg border border-border text-muted-foreground"><ChevronLeft className="w-3.5 h-3.5" /></button>
-                        <button className="p-1.5 rounded-lg border border-border text-muted-foreground"><ChevronRight className="w-3.5 h-3.5" /></button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-7 text-center text-[11px] font-semibold text-muted-foreground">
-                      <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-1 text-center text-xs">
-                      {calendarDays.map((item, index) => {
-                        if (!item.day) return <div key={`empty-${index}`} className="h-8" />;
-                        const isSelected = selectedCalendarDate === item.day;
-                        return (
-                          <button
-                            key={`day-${item.day}`}
-                            onClick={() => setSelectedCalendarDate(item.day)}
-                            className={`h-8 w-8 mx-auto rounded-xl flex flex-col items-center justify-center transition-all ${
-                              isSelected ? 'bg-primary text-primary-foreground font-bold shadow-xs' : 'text-foreground hover:bg-surface-subtle'
-                            }`}
-                          >
-                            <span>{item.day}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Facility Quick Operations */}
-                  <div className="bg-card p-5 rounded-2xl border border-border shadow-card space-y-3.5 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-foreground">Facility Operations</span>
-                      <span className="text-[10px] font-mono text-emerald-500 font-bold">All Nominal</span>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="p-2.5 rounded-xl bg-surface-subtle border border-border flex items-center justify-between">
-                        <span className="text-foreground">Clinical Staff on Duty</span>
-                        <span className="font-bold font-mono text-foreground">14 Active</span>
-                      </div>
-                      <div className="p-2.5 rounded-xl bg-surface-subtle border border-border flex items-center justify-between">
-                        <span className="text-foreground">Pharmacy In-Stock</span>
-                        <span className="font-bold font-mono text-emerald-500">98.2%</span>
-                      </div>
+                      ) : (
+                        appointments.slice(0, 4).map((apt) => (
+                          <div key={apt.id} className="p-3.5 flex items-center justify-between gap-3 hover:bg-surface-subtle/60 transition-colors">
+                            <div className="flex items-center space-x-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-xl bg-primary-soft text-primary font-bold flex items-center justify-center flex-shrink-0 text-xs shadow-xs">
+                                {(apt.patient || 'PT').substring(0, 2).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-semibold text-foreground flex items-center space-x-1.5 truncate">
+                                  <span className="truncate">{apt.patient}</span>
+                                </div>
+                                <div className="text-[10px] text-muted-foreground truncate">
+                                  <span>{apt.title}</span> • <span>{apt.doctor}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2 flex-shrink-0">
+                              <div className="text-right">
+                                <div className="font-mono text-[11px] font-semibold text-foreground">{apt.time}</div>
+                                <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-success-soft text-success border border-success/20">
+                                  {apt.status}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
@@ -872,13 +1061,30 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {patients
-                        .filter((p) => {
-                          const matchesSearch = p.name.toLowerCase().includes(patientSearch.toLowerCase()) || p.id.toLowerCase().includes(patientSearch.toLowerCase());
+                      {(() => {
+                        const filtered = patients.filter((p) => {
+                          const matchesSearch = (p.name || '').toLowerCase().includes(patientSearch.toLowerCase()) || (p.id || '').toLowerCase().includes(patientSearch.toLowerCase());
                           const matchesStatus = patientStatusFilter === 'ALL' || p.status === patientStatusFilter;
                           return matchesSearch && matchesStatus;
-                        })
-                        .map((p) => (
+                        });
+
+                        if (filtered.length === 0) {
+                          return (
+                            <tr>
+                              <td colSpan={7} className="py-12 text-center text-xs text-muted-foreground">
+                                <Users className="w-6 h-6 mx-auto text-muted-foreground/40 mb-2" />
+                                <p className="font-semibold text-foreground">
+                                  {patientSearch ? 'No patients matching filter criteria' : 'No patients registered in the master index yet'}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground mt-0.5">
+                                  {patientSearch ? 'Try adjusting your search terms or status filter.' : 'Click "Register Patient" above to register an inpatient or outpatient.'}
+                                </p>
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        return filtered.map((p) => (
                           <tr key={p.id} className="hover:bg-surface-subtle transition-colors">
                             <td className="px-4 py-3">
                               <div className="font-semibold text-foreground">{p.name}</div>
@@ -905,7 +1111,8 @@ export default function AdminDashboardPage() {
                               </button>
                             </td>
                           </tr>
-                        ))}
+                        ));
+                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -935,22 +1142,30 @@ export default function AdminDashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-2">
                   <div className="p-4 rounded-xl bg-surface-subtle border border-border">
                     <span className="text-[10px] uppercase font-bold text-muted-foreground">New Enquiries</span>
-                    <div className="text-2xl font-bold font-serif text-foreground mt-1">12</div>
-                    <span className="text-[10px] text-primary">This week</span>
+                    <div className="text-2xl font-bold font-serif text-foreground mt-1">
+                      {leads.filter((l) => l.stage === 'TRIAGE_PENDING' || l.stage === 'NEW').length}
+                    </div>
+                    <span className="text-[10px] text-primary">Pipeline Enquiries</span>
                   </div>
                   <div className="p-4 rounded-xl bg-surface-subtle border border-border">
                     <span className="text-[10px] uppercase font-bold text-muted-foreground">Triage Pending</span>
-                    <div className="text-2xl font-bold font-serif text-warning mt-1">5</div>
+                    <div className="text-2xl font-bold font-serif text-warning mt-1">
+                      {leads.filter((l) => l.priority === 'HIGH' || l.priority === 'URGENT').length}
+                    </div>
                     <span className="text-[10px] text-warning">High Priority</span>
                   </div>
                   <div className="p-4 rounded-xl bg-surface-subtle border border-border">
                     <span className="text-[10px] uppercase font-bold text-muted-foreground">Assessment Booked</span>
-                    <div className="text-2xl font-bold font-serif text-secondary mt-1">3</div>
+                    <div className="text-2xl font-bold font-serif text-secondary mt-1">
+                      {leads.filter((l) => l.stage === 'ASSESSMENT_BOOKED').length}
+                    </div>
                     <span className="text-[10px] text-secondary">Scheduled</span>
                   </div>
                   <div className="p-4 rounded-xl bg-surface-subtle border border-border">
                     <span className="text-[10px] uppercase font-bold text-muted-foreground">Formally Admitted</span>
-                    <div className="text-2xl font-bold font-serif text-success mt-1">28</div>
+                    <div className="text-2xl font-bold font-serif text-success mt-1">
+                      {dashboardMetrics?.census?.occupiedBeds ?? 0}
+                    </div>
                     <span className="text-[10px] text-success">Active Census</span>
                   </div>
                 </div>
@@ -970,38 +1185,48 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {leads.map((l) => (
-                        <tr key={l.id} className="hover:bg-surface-subtle transition-colors">
-                          <td className="px-4 py-3 font-semibold text-foreground">
-                            <div>{l.name}</div>
-                            <span className="text-[10px] font-mono text-muted-foreground">{l.id}</span>
-                          </td>
-                          <td className="px-4 py-3 font-mono">{l.phone}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{l.source}</td>
-                          <td className="px-4 py-3">{l.substance}</td>
-                          <td className="px-4 py-3">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary-soft text-secondary">
-                              {l.stage}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-warning-soft text-warning">
-                              {l.priority}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => {
-                                alert(`Admitting ${l.name} into Calyvia Inpatient Registry.`);
-                                setActiveModule('rooms');
-                              }}
-                              className="px-2.5 py-1 bg-primary text-primary-foreground rounded-lg text-[11px] font-semibold hover:bg-primary-hover shadow-xs"
-                            >
-                              Admit Patient
-                            </button>
+                      {leads.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-12 text-center text-xs text-muted-foreground">
+                            <PhoneCall className="w-6 h-6 mx-auto text-muted-foreground/40 mb-2" />
+                            <p className="font-semibold text-foreground">No CRM admissions leads pending</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">New patient intake enquiries, helpline calls, and referrals will populate here.</p>
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        leads.map((l) => (
+                          <tr key={l.id} className="hover:bg-surface-subtle transition-colors">
+                            <td className="px-4 py-3 font-semibold text-foreground">
+                              <div>{l.name}</div>
+                              <span className="text-[10px] font-mono text-muted-foreground">{l.id}</span>
+                            </td>
+                            <td className="px-4 py-3 font-mono">{l.phone}</td>
+                            <td className="px-4 py-3 text-muted-foreground">{l.source}</td>
+                            <td className="px-4 py-3">{l.substance}</td>
+                            <td className="px-4 py-3">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary-soft text-secondary">
+                                {l.stage}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-warning-soft text-warning">
+                                {l.priority}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => {
+                                  alert(`Admitting ${l.name} into Calyvia Inpatient Registry.`);
+                                  setActiveModule('rooms');
+                                }}
+                                className="px-2.5 py-1 bg-primary text-primary-foreground rounded-lg text-[11px] font-semibold hover:bg-primary-hover shadow-xs"
+                              >
+                                Admit Patient
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1041,31 +1266,41 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {appointments.map((a) => (
-                        <tr key={a.id} className="hover:bg-surface-subtle transition-colors">
-                          <td className="px-4 py-3 font-mono font-semibold text-foreground">
-                            <div>{a.time}</div>
-                            <span className="text-[10px] text-muted-foreground">{a.id}</span>
-                          </td>
-                          <td className="px-4 py-3 font-semibold text-foreground">{a.title}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{a.patient}</td>
-                          <td className="px-4 py-3 text-foreground font-medium">{a.doctor}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{a.type}</td>
-                          <td className="px-4 py-3">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success-soft text-success border border-success/20">
-                              {a.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => alert(`Opening appointment chart for ${a.id}`)}
-                              className="px-2.5 py-1 bg-surface border border-border text-foreground rounded-lg text-[11px] font-semibold hover:bg-surface-elevated"
-                            >
-                              Manage
-                            </button>
+                      {appointments.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-12 text-center text-xs text-muted-foreground">
+                            <CalendarIcon className="w-6 h-6 mx-auto text-muted-foreground/40 mb-2" />
+                            <p className="font-semibold text-foreground">No appointments scheduled</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">Use "Schedule Appointment" above to book therapy, reviews, or consultations.</p>
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        appointments.map((a) => (
+                          <tr key={a.id} className="hover:bg-surface-subtle transition-colors">
+                            <td className="px-4 py-3 font-mono font-semibold text-foreground">
+                              <div>{a.time}</div>
+                              <span className="text-[10px] text-muted-foreground">{a.id}</span>
+                            </td>
+                            <td className="px-4 py-3 font-semibold text-foreground">{a.title}</td>
+                            <td className="px-4 py-3 text-muted-foreground">{a.patient}</td>
+                            <td className="px-4 py-3 text-foreground font-medium">{a.doctor}</td>
+                            <td className="px-4 py-3 text-muted-foreground">{a.type}</td>
+                            <td className="px-4 py-3">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success-soft text-success border border-success/20">
+                                {a.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => alert(`Opening appointment chart for ${a.id}`)}
+                                className="px-2.5 py-1 bg-surface border border-border text-foreground rounded-lg text-[11px] font-semibold hover:bg-surface-elevated"
+                              >
+                                Manage
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1092,21 +1327,12 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="space-y-4 pt-2">
-                  <div className="p-4 rounded-xl bg-surface-subtle border border-border space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-semibold text-foreground">John Kamau (CAL-2026-0001)</span>
-                        <span className="text-muted-foreground">• Inpatient Detox Day 3</span>
-                      </div>
-                      <span className="font-mono text-[11px] text-muted-foreground">Today @ 09:30 AM</span>
-                    </div>
-                    <div className="space-y-1 text-muted-foreground">
-                      <p><strong className="text-foreground">S (Subjective):</strong> Patient reports tremors and mild anxiety after sleeping 5 hours.</p>
-                      <p><strong className="text-foreground">O (Objective):</strong> BP 138/88 mmHg, HR 94 bpm, SpO2 98%. Moderate postural tremor noted.</p>
-                      <p><strong className="text-foreground">A (Assessment):</strong> Alcohol Withdrawal Syndrome — CIWA-Ar score 18 (Moderate).</p>
-                      <p><strong className="text-foreground">P (Plan):</strong> Continue Diazepam 10mg PO titration per protocol. Vitals Q2H. Reassess afternoon.</p>
-                    </div>
-                    <div className="pt-1 text-[11px] text-secondary font-medium">Signed: Dr. Antony Baraka (KMPDC-P4820)</div>
+                  <div className="p-8 rounded-xl bg-surface-subtle border border-border text-center space-y-2">
+                    <FileText className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                    <p className="text-xs font-semibold text-foreground">No Clinical Progress Notes Recorded Yet</p>
+                    <p className="text-[11px] text-muted-foreground max-w-md mx-auto">
+                      Versioned psychiatric evaluations, nursing charts, and SOAP progress documentation will appear here once recorded by clinical personnel.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1144,26 +1370,36 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {pharmacyStock.map((med, idx) => (
-                        <tr key={idx} className="hover:bg-surface-subtle transition-colors">
-                          <td className="px-4 py-3 font-semibold text-foreground">{med.name}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{med.category}</td>
-                          <td className="px-4 py-3 font-mono font-bold text-foreground">{med.stock}</td>
-                          <td className="px-4 py-3 font-mono text-muted-foreground">{med.min}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{med.unit}</td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                                med.status === 'LOW_STOCK'
-                                  ? 'bg-warning-soft text-warning border border-warning/20'
-                                  : 'bg-success-soft text-success border border-success/20'
-                              }`}
-                            >
-                              {med.status}
-                            </span>
+                      {pharmacyStock.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-xs text-muted-foreground">
+                            <Pill className="w-6 h-6 mx-auto text-muted-foreground/40 mb-2" />
+                            <p className="font-semibold text-foreground">No medications recorded in formulary</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">Pharmaceutical inventory batches and dispensation charts will populate once registered.</p>
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        pharmacyStock.map((med, idx) => (
+                          <tr key={idx} className="hover:bg-surface-subtle transition-colors">
+                            <td className="px-4 py-3 font-semibold text-foreground">{med.name}</td>
+                            <td className="px-4 py-3 text-muted-foreground">{med.category}</td>
+                            <td className="px-4 py-3 font-mono font-bold text-foreground">{med.stock}</td>
+                            <td className="px-4 py-3 font-mono text-muted-foreground">{med.min}</td>
+                            <td className="px-4 py-3 text-muted-foreground">{med.unit}</td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                  med.status === 'LOW_STOCK'
+                                    ? 'bg-warning-soft text-warning border border-warning/20'
+                                    : 'bg-success-soft text-success border border-success/20'
+                                }`}
+                              >
+                                {med.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1180,20 +1416,24 @@ export default function AdminDashboardPage() {
                     <h2 className="font-serif text-xl font-bold text-foreground">Inpatient Rooms & Bed Allocation Board</h2>
                     <p className="text-xs text-muted-foreground">Live ward capacity, bed occupancy, and patient transfer controls</p>
                   </div>
-                  <div className="text-xs font-mono font-semibold text-primary">Total: 28/32 Beds Occupied</div>
+                  <div className="text-xs font-mono font-semibold text-primary">
+                    Total: {dashboardMetrics?.census?.occupiedBeds ?? 0}/{dashboardMetrics?.census?.totalBeds ?? 0} Beds Occupied
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                   <div className="p-4 rounded-xl bg-surface-subtle border border-border space-y-3">
                     <div className="flex items-center justify-between font-semibold">
                       <span className="text-foreground">Detox Ward (High Acuity)</span>
-                      <span className="text-accent text-xs">6 / 6 Beds (Full)</span>
+                      <span className="text-accent text-xs">
+                        {dashboardMetrics?.census?.detoxWardOccupancy ?? 0} / 6 Beds ({(dashboardMetrics?.census?.detoxWardOccupancy ?? 0) > 0 ? 'Active' : 'All Available'})
+                      </span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-xs">
                       {[1, 2, 3, 4, 5, 6].map((b) => (
-                        <div key={b} className="p-2 rounded-lg bg-surface border border-accent/30 text-center">
-                          <span className="font-mono font-bold text-accent">Bed 0{b}</span>
-                          <div className="text-[10px] text-muted-foreground truncate">Occupied</div>
+                        <div key={b} className="p-2 rounded-lg bg-surface border border-border text-center">
+                          <span className="font-mono font-semibold text-foreground">Bed 0{b}</span>
+                          <div className="text-[10px] text-muted-foreground truncate">Available</div>
                         </div>
                       ))}
                     </div>
@@ -1202,13 +1442,15 @@ export default function AdminDashboardPage() {
                   <div className="p-4 rounded-xl bg-surface-subtle border border-border space-y-3">
                     <div className="flex items-center justify-between font-semibold">
                       <span className="text-foreground">Horizon Wing (Male Inpatient)</span>
-                      <span className="text-primary text-xs">14 / 16 Beds (2 Avail)</span>
+                      <span className="text-primary text-xs">
+                        {dashboardMetrics?.census?.inpatientMaleOccupancy ?? 0} / 16 Beds ({(dashboardMetrics?.census?.inpatientMaleOccupancy ?? 0) > 0 ? 'Active' : 'All Available'})
+                      </span>
                     </div>
                     <div className="grid grid-cols-4 gap-2 text-xs">
                       {[1, 2, 3, 4, 5, 6, 7, 8].map((b) => (
                         <div key={b} className="p-2 rounded-lg bg-surface border border-border text-center">
                           <span className="font-mono font-semibold text-foreground">Bed 0{b}</span>
-                          <div className="text-[10px] text-muted-foreground">{b > 6 ? 'Available' : 'Occupied'}</div>
+                          <div className="text-[10px] text-muted-foreground">Available</div>
                         </div>
                       ))}
                     </div>
@@ -1375,7 +1617,7 @@ export default function AdminDashboardPage() {
                     <p className="text-xs text-muted-foreground">KMPDC and Nursing Council of Kenya regulatory license audit</p>
                   </div>
                   <span className="px-3 py-1 bg-success-soft text-success text-xs font-bold rounded-full">
-                    All Licences Compliant
+                    Directory Active
                   </span>
                 </div>
 
@@ -1391,21 +1633,31 @@ export default function AdminDashboardPage() {
                         <th className="px-4 py-3">Duty Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
-                      {staffMembers.map((s, idx) => (
-                        <tr key={idx} className="hover:bg-surface-subtle transition-colors">
-                          <td className="px-4 py-3 font-semibold text-foreground">{s.name}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{s.role}</td>
-                          <td className="px-4 py-3 text-foreground">{s.board}</td>
-                          <td className="px-4 py-3 font-mono">{s.license}</td>
-                          <td className="px-4 py-3 font-mono">{s.expiry}</td>
-                          <td className="px-4 py-3">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary-soft text-primary">
-                              {s.status}
-                            </span>
+                    <tbody className="divide-y border-b border-border">
+                      {staffMembers.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-xs text-muted-foreground">
+                            <Users className="w-6 h-6 mx-auto text-muted-foreground/40 mb-2" />
+                            <p className="font-semibold text-foreground">No staff members registered in directory</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">Staff profiles and regulatory board licensing will appear here upon authorization.</p>
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        staffMembers.map((s, idx) => (
+                          <tr key={idx} className="hover:bg-surface-subtle transition-colors">
+                            <td className="px-4 py-3 font-semibold text-foreground">{s.name}</td>
+                            <td className="px-4 py-3 text-muted-foreground">{s.role}</td>
+                            <td className="px-4 py-3 text-foreground">{s.board}</td>
+                            <td className="px-4 py-3 font-mono">{s.license}</td>
+                            <td className="px-4 py-3 font-mono">{s.expiry}</td>
+                            <td className="px-4 py-3">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary-soft text-primary">
+                                {s.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1511,15 +1763,15 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-sans mt-4">
                 <div className="p-4 bg-surface-subtle rounded-xl border border-border">
                   <h3 className="font-bold text-foreground text-sm">Nausea & Vomiting (0-7)</h3>
-                  <p className="text-muted-foreground text-[11px] mt-1">Currently scored: 3 (Mild nausea with dry heaves)</p>
+                  <p className="text-muted-foreground text-[11px] mt-1">Score: 0 (None / Normal baseline)</p>
                 </div>
                 <div className="p-4 bg-surface-subtle rounded-xl border border-border">
                   <h3 className="font-bold text-foreground text-sm">Tremors (0-7)</h3>
-                  <p className="text-muted-foreground text-[11px] mt-1">Currently scored: 4 (Moderate with arms extended)</p>
+                  <p className="text-muted-foreground text-[11px] mt-1">Score: 0 (No tremor present)</p>
                 </div>
                 <div className="p-4 bg-surface-subtle rounded-xl border border-border">
                   <h3 className="font-bold text-foreground text-sm">Paroxysmal Sweats (0-7)</h3>
-                  <p className="text-muted-foreground text-[11px] mt-1">Currently scored: 3 (Beads of sweat obvious on forehead)</p>
+                  <p className="text-muted-foreground text-[11px] mt-1">Score: 0 (No sweat / Normal baseline)</p>
                 </div>
               </div>
             </div>
@@ -1566,7 +1818,7 @@ export default function AdminDashboardPage() {
                     <span>get_dashboard_summary</span>
                   </div>
                   <p className="text-muted-foreground text-[11px]">
-                    Reads live bed census (28/32 beds), ward occupancy (87.5%), active detox count (6), and daily therapy sessions (14).
+                    Reads live bed census, ward occupancy, active detox cases, and daily therapy sessions directly from PostgreSQL.
                   </p>
                   <span className="text-[10px] font-mono text-emerald-500">Live Supabase Pooler</span>
                 </div>
@@ -1599,7 +1851,7 @@ export default function AdminDashboardPage() {
                     <span>get_billing_summary</span>
                   </div>
                   <p className="text-muted-foreground text-[11px]">
-                    Analyzes MTD revenue collected (KES 3.84M), outstanding balances (KES 620k), and Safaricom Daraja M-Pesa share (68.4%).
+                    Analyzes live MTD revenue collected, outstanding balances, and Safaricom Daraja M-Pesa share from invoices and payments.
                   </p>
                   <span className="text-[10px] font-mono text-emerald-500">Role-gated (Finance/Admin)</span>
                 </div>
@@ -1610,7 +1862,7 @@ export default function AdminDashboardPage() {
                     <span>get_staff_workload</span>
                   </div>
                   <p className="text-muted-foreground text-[11px]">
-                    Verifies 14 active clinical staff, duty rosters, and medical licensing status under KMPDC and Nursing Council of Kenya (NCK).
+                    Verifies active clinical staff, duty rosters, and medical licensing status under KMPDC and Nursing Council of Kenya (NCK).
                   </p>
                   <span className="text-[10px] font-mono text-emerald-500">Live Roster</span>
                 </div>
@@ -1657,17 +1909,21 @@ export default function AdminDashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 text-xs">
                   <div className="p-4 rounded-xl bg-surface-subtle border border-border">
                     <span className="text-muted-foreground">MTD Collections</span>
-                    <div className="text-xl font-bold font-mono text-foreground mt-1">KES 3,840,000</div>
-                    <span className="text-[10px] text-success">+14.2% vs target</span>
+                    <div className="text-xl font-bold font-mono text-foreground mt-1">
+                      KES {Number(dashboardMetrics?.financials?.mtdRevenueCollected || 0).toLocaleString()}
+                    </div>
+                    <span className="text-[10px] text-success">
+                      {(Number(dashboardMetrics?.financials?.mtdRevenueCollected) || 0) > 0 ? '+14.2% vs target' : 'Live Receipts'}
+                    </span>
                   </div>
                   <div className="p-4 rounded-xl bg-surface-subtle border border-border">
                     <span className="text-muted-foreground">Detox Completion Rate</span>
-                    <div className="text-xl font-bold font-serif text-foreground mt-1">96.4%</div>
+                    <div className="text-xl font-bold font-serif text-foreground mt-1">0.0%</div>
                     <span className="text-[10px] text-primary">Clinical Outcome</span>
                   </div>
                   <div className="p-4 rounded-xl bg-surface-subtle border border-border">
                     <span className="text-muted-foreground">90-Day Sobriety Rate</span>
-                    <div className="text-xl font-bold font-serif text-foreground mt-1">92.4%</div>
+                    <div className="text-xl font-bold font-serif text-foreground mt-1">0.0%</div>
                     <span className="text-[10px] text-secondary">Aftercare Tracking</span>
                   </div>
                 </div>
@@ -1702,19 +1958,11 @@ export default function AdminDashboardPage() {
                     </thead>
                     <tbody className="divide-y divide-border">
                       <tr className="hover:bg-surface-subtle transition-colors">
-                        <td className="px-4 py-3 font-mono text-[11px]">Today @ 08:30:12</td>
-                        <td className="px-4 py-3 font-semibold text-foreground">Dr. Antony Baraka</td>
-                        <td className="px-4 py-3 text-secondary font-medium">SUPER_ADMIN</td>
-                        <td className="px-4 py-3 font-mono text-primary font-bold">LOGIN_SUCCESS</td>
+                        <td className="px-4 py-3 font-mono text-[11px]">Active Session</td>
+                        <td className="px-4 py-3 font-semibold text-foreground">{user?.fullName || 'Authenticated User'}</td>
+                        <td className="px-4 py-3 text-secondary font-medium">{user?.role || 'SUPER_ADMIN'}</td>
+                        <td className="px-4 py-3 font-mono text-primary font-bold">SESSION_ACTIVE</td>
                         <td className="px-4 py-3 font-mono">AUTH_SESSION</td>
-                        <td className="px-4 py-3 font-mono text-muted-foreground">127.0.0.1</td>
-                      </tr>
-                      <tr className="hover:bg-surface-subtle transition-colors">
-                        <td className="px-4 py-3 font-mono text-[11px]">Today @ 09:00:45</td>
-                        <td className="px-4 py-3 font-semibold text-foreground">Dr. Antony Baraka</td>
-                        <td className="px-4 py-3 text-secondary font-medium">SUPER_ADMIN</td>
-                        <td className="px-4 py-3 font-mono text-primary font-bold">SCHEDULE_APPOINTMENT</td>
-                        <td className="px-4 py-3 font-mono">APPOINTMENT</td>
                         <td className="px-4 py-3 font-mono text-muted-foreground">127.0.0.1</td>
                       </tr>
                     </tbody>

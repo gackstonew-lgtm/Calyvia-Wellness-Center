@@ -30,34 +30,10 @@ export class PharmacyService {
           orderBy: { brandName: 'asc' },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Medications fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-med-1',
-        brandName: 'Valium',
-        genericName: 'Diazepam',
-        strength: '10mg',
-        dosageForm: 'Tablet',
-        currentStock: 250,
-        reorderLevel: 20,
-        unitPriceKES: 50,
-        isControlledDrug: true,
-      },
-      {
-        id: 'mock-med-2',
-        brandName: 'Neurobion',
-        genericName: 'Vitamin B-Complex + Thiamine',
-        strength: '100mg',
-        dosageForm: 'Tablet',
-        currentStock: 500,
-        reorderLevel: 30,
-        unitPriceKES: 35,
-        isControlledDrug: false,
-      },
-    ];
+    return [];
   }
 
   async createPrescription(dto: CreatePrescriptionDto) {

@@ -48,27 +48,9 @@ export class ReferralsService {
           orderBy: { createdAt: 'desc' },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Referral partners fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-partner-1',
-        organizationName: 'Nairobi West Hospital Psychiatry Dept',
-        contactPerson: 'Dr. Omolo',
-        phone: '+254700112233',
-        category: 'HOSPITAL',
-        isActive: true,
-      },
-      {
-        id: 'mock-partner-2',
-        organizationName: 'Kiambu County Recovery Fellowship',
-        contactPerson: 'Pastor Peter Mwangi',
-        phone: '+254711223344',
-        category: 'CHURCH',
-        isActive: true,
-      },
-    ];
+    return [];
   }
 }

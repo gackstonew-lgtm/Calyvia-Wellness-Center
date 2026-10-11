@@ -49,21 +49,9 @@ export class FamilyService {
           where: { patientId },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Family contacts fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-family-1',
-        patientId,
-        fullName: 'Mary Wanjiru Mwangi',
-        relationship: 'Spouse',
-        phone: '+254722889900',
-        email: 'mary.mwangi@example.ke',
-        isPrimaryGuarantor: true,
-        hasConsentToUpdate: true,
-      },
-    ];
+    return [];
   }
 }

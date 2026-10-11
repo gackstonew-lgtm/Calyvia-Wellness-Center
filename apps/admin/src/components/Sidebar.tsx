@@ -32,7 +32,8 @@ import {
   Sparkles,
   LayoutDashboard,
   X,
-  ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { useAuth } from './AuthContext';
@@ -43,6 +44,8 @@ interface SidebarProps {
   onSelectModule: (moduleId: string) => void;
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -50,6 +53,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectModule,
   mobileOpen = false,
   onCloseMobile,
+  isCollapsed = false,
+  onToggleCollapse,
 }) => {
   const { theme } = useTheme();
   const { user, logout } = useAuth();
@@ -142,10 +147,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     : 'DB';
 
   const sidebarContent = (
-    <div className="w-72 bg-surface text-foreground h-full flex flex-col border-r border-border select-none overflow-hidden transition-colors duration-200">
-      {/* Brand Header with Optimized Transparent Logo */}
+    <div
+      className={`${
+        isCollapsed ? 'w-20' : 'w-72'
+      } bg-surface text-foreground h-full flex flex-col border-r border-border select-none overflow-hidden transition-all duration-300`}
+    >
+      {/* Brand Header with Optimized Transparent Logo & Collapse Arrow Button */}
       <div className="p-4 bg-surface border-b border-border flex items-center justify-between">
-        <div className="flex items-center space-x-3 w-full">
+        <div className="flex items-center space-x-3 min-w-0 flex-1">
           <div className="relative w-10 h-10 flex-shrink-0 bg-primary-soft p-1.5 rounded-xl border border-primary/20 shadow-xs flex items-center justify-center">
             <img
               src={theme === 'dark' ? '/brand/calyvia-emblem-dark.svg' : '/brand/calyvia-emblem-light.svg'}
@@ -155,31 +164,53 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="w-7 h-7 object-contain"
             />
           </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="font-serif text-base font-bold tracking-tight text-foreground leading-tight truncate">
-              Calyvia Wellness
-            </h1>
-            <p className="text-[11px] text-muted-foreground font-sans truncate">Ruiru, Kenya • HMIS / EMR</p>
-          </div>
-          {onCloseMobile && (
-            <button
-              onClick={onCloseMobile}
-              className="md:hidden p-1.5 rounded-lg text-muted-foreground hover:bg-surface-elevated hover:text-foreground"
-              aria-label="Close menu"
-            >
-              <X className="w-5 h-5" />
-            </button>
+          {!isCollapsed && (
+            <div className="min-w-0 flex-1">
+              <h1 className="font-serif text-base font-bold tracking-tight text-foreground leading-tight truncate">
+                Calyvia Wellness
+              </h1>
+              <p className="text-[11px] text-muted-foreground font-sans truncate">Ruiru, Kenya • HMIS / EMR</p>
+            </div>
           )}
         </div>
+
+        {/* Desktop Collapse / Expand Arrow Button */}
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="hidden md:flex p-1.5 rounded-xl border border-border bg-surface-subtle hover:bg-surface-elevated text-muted-foreground hover:text-foreground transition-all duration-150 flex-shrink-0"
+          >
+            {isCollapsed ? (
+              <ChevronRight className="w-4 h-4 text-primary" />
+            ) : (
+              <ChevronLeft className="w-4 h-4" />
+            )}
+          </button>
+        )}
+
+        {/* Mobile Close Button */}
+        {onCloseMobile && (
+          <button
+            onClick={onCloseMobile}
+            className="md:hidden p-1.5 rounded-lg text-muted-foreground hover:bg-surface-elevated hover:text-foreground"
+            aria-label="Close menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
-      {/* Navigation List with rounded pill design inspired by Holistic */}
-      <div className="flex-1 overflow-y-auto py-3 px-3 space-y-4 text-xs font-sans">
+      {/* Navigation List with rounded pill design */}
+      <div className="flex-1 overflow-y-auto py-3 px-2 space-y-4 text-xs font-sans">
         {visibleSections.map((section, idx) => (
           <div key={idx} className="space-y-1">
-            <h2 className="px-3 text-[10px] uppercase font-bold tracking-wider text-muted-foreground/80">
-              {section.category}
-            </h2>
+            {!isCollapsed && (
+              <h2 className="px-3 text-[10px] uppercase font-bold tracking-wider text-muted-foreground/80">
+                {section.category}
+              </h2>
+            )}
             {section.items.map((item) => {
               const Icon = item.icon;
               const isActive = currentModule === item.id;
@@ -187,9 +218,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={item.id}
                   onClick={() => handleItemClick(item.id)}
-                  className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl transition-all duration-150 text-left ${
+                  title={isCollapsed ? item.name : undefined}
+                  aria-label={item.name}
+                  className={`w-full flex items-center ${
+                    isCollapsed ? 'justify-center px-2 py-3' : 'space-x-2.5 px-3.5 py-2.5'
+                  } rounded-2xl transition-all duration-150 text-left ${
                     isActive
-                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs dark:shadow-[0_2px_12px_-2px_rgba(0,230,118,0.3)]'
                       : 'text-muted-foreground hover:bg-surface-subtle hover:text-foreground'
                   }`}
                 >
@@ -198,7 +233,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       isActive ? 'text-primary-foreground' : 'text-muted-foreground/70'
                     }`}
                   />
-                  <span className="truncate">{item.name}</span>
+                  {!isCollapsed && <span className="truncate">{item.name}</span>}
                 </button>
               );
             })}
@@ -206,38 +241,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ))}
       </div>
 
-      {/* User Profile Card & Sign Out at Bottom */}
+      {/* User Profile Card & Sign Out at Bottom (Without visible Supabase connection label) */}
       <div className="p-3 bg-surface-subtle border-t border-border space-y-2">
-        <div className="flex items-center justify-between p-2 rounded-xl bg-surface border border-border shadow-xs">
+        <div
+          className={`flex items-center ${
+            isCollapsed ? 'justify-center p-1.5' : 'justify-between p-2'
+          } rounded-xl bg-surface border border-border shadow-xs`}
+        >
           <div className="flex items-center space-x-2.5 min-w-0">
-            <div className="relative w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-xs">
+            <div
+              className="relative w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-xs"
+              title={displayName}
+            >
               <span>{initials}</span>
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-surface" />
+              <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border-2 border-surface" />
             </div>
-            <div className="min-w-0">
-              <div className="text-xs font-semibold text-foreground truncate flex items-center gap-1">
-                <span>{displayName}</span>
+            {!isCollapsed && (
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-foreground truncate flex items-center gap-1">
+                  <span>{displayName}</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground truncate">{roleTitle}</p>
               </div>
-              <p className="text-[10px] text-muted-foreground truncate">{roleTitle}</p>
-            </div>
+            )}
           </div>
-          <button
-            title="Sign Out"
-            aria-label="Sign Out"
-            onClick={logout}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-danger hover:bg-danger-soft transition-colors cursor-pointer"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Server & Compliance Status */}
-        <div className="px-2 py-1 flex items-center justify-between text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Supabase: Connected</span>
-          </span>
-          <span className="font-mono text-secondary">KDPA 2019</span>
+          {!isCollapsed && (
+            <button
+              title="Sign Out"
+              aria-label="Sign Out"
+              onClick={logout}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-danger hover:bg-danger-soft transition-colors cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -246,7 +283,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* Desktop Persistent Sidebar */}
-      <aside className="hidden md:flex flex-shrink-0 h-screen sticky top-0 z-30">
+      <aside className="hidden md:flex flex-shrink-0 h-screen sticky top-0 z-30 transition-all duration-300">
         {sidebarContent}
       </aside>
 

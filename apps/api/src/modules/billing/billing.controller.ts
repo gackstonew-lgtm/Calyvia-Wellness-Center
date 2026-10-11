@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { BillingService, CreateInvoiceDto, RecordPaymentDto, TriggerMpesaStkDto } from './billing.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -36,5 +36,19 @@ export class BillingController {
   @ApiOperation({ summary: 'Trigger Safaricom Lipa Na M-Pesa Online STK Push directly to phone' })
   async triggerMpesaStk(@Body() dto: TriggerMpesaStkDto) {
     return this.billingService.triggerDarajaStk(dto);
+  }
+
+  @Get('invoices')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FINANCE_BILLING, UserRole.FACILITY_ADMIN)
+  @ApiOperation({ summary: 'List patient invoices' })
+  async getInvoices() {
+    return this.billingService.getInvoices();
+  }
+
+  @Get('payments')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FINANCE_BILLING, UserRole.FACILITY_ADMIN)
+  @ApiOperation({ summary: 'List payments recorded' })
+  async getPayments() {
+    return this.billingService.getPayments();
   }
 }

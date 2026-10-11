@@ -90,53 +90,25 @@ export class PatientsService {
         });
         return patients.map((p) => this.sanitizePatient(p));
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Patients fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-patient-1',
-        registrationNumber: 'CAL-2026-0038',
-        firstName: 'James',
-        lastName: 'Mwangi',
-        preferredName: 'Jimmy',
-        gender: 'MALE',
-        phone: '+254712345678',
-        email: 'j.mwangi@example.ke',
-        county: 'Kiambu',
-        status: PatientStatus.ADMITTED_DETOX,
-        knownAllergies: 'Penicillin, Aspirin',
-        substanceHistory: 'Alcohol (12 units daily, 8 years)',
-      },
-    ];
+    return [];
   }
 
   async findOne(id: string) {
-    try {
-      if (this.prisma && this.prisma.patient) {
-        const patient = await this.prisma.patient.findUnique({
-          where: { id },
-          include: {
-            emergencyContacts: true,
-            admissions: true,
-            bedAllocations: { include: { bed: { include: { room: true } } } },
-          },
-        });
-        if (!patient) throw new NotFoundException('Patient record not found');
-        return this.sanitizePatient(patient);
-      }
-    } catch (e) {
-      if (e instanceof NotFoundException) throw e;
+    if (this.prisma && this.prisma.patient) {
+      const patient = await this.prisma.patient.findUnique({
+        where: { id },
+        include: {
+          emergencyContacts: true,
+          admissions: true,
+          bedAllocations: { include: { bed: { include: { room: true } } } },
+        },
+      });
+      if (patient) return this.sanitizePatient(patient);
     }
-
-    return {
-      id,
-      registrationNumber: 'CAL-2026-0038',
-      firstName: 'James',
-      lastName: 'Mwangi',
-      status: PatientStatus.ADMITTED_DETOX,
-    };
+    throw new NotFoundException(`Patient record not found: ${id}`);
   }
 
   async update(id: string, dto: UpdatePatientDto) {

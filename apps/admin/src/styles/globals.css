@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -69,75 +69,77 @@
 }
 
 .dark {
-  /* Surface & Base Canvas (Deep charcoal-slate with cool forest undertones) */
-  --background: #0D1411;
-  --foreground: #ECF2ED;
-  --surface: #141E1A;
-  --surface-subtle: #101915;
-  --surface-elevated: #1B2923;
+  /* Surface & Base Canvas (Premium AMOLED Pure Black + Layered Obsidian) */
+  --background: #000000;
+  --foreground: #E8F3EC;
+  --surface: #030806;
+  --surface-subtle: #060E0A;
+  --surface-elevated: #0B1812;
 
   /* Cards & Modals */
-  --card: #141E1A;
-  --card-foreground: #ECF2ED;
-  --card-inner: #192620;
+  --card: #040A07;
+  --card-foreground: #E8F3EC;
+  --card-inner: #07120C;
 
-  /* Calyvia Brand Primary (Luminous Emerald-Sage for dark surfaces) */
-  --primary: #48A368;
-  --primary-foreground: #09130D;
-  --primary-hover: #5BB97B;
-  --primary-soft: #132A1E;
+  /* Calyvia Brand Primary (Vivid Emerald Green matching visual target) */
+  --primary: #00E676;
+  --primary-foreground: #001A0B;
+  --primary-hover: #00F58A;
+  --primary-soft: rgba(0, 230, 118, 0.09);
 
-  /* Calyvia Brand Secondary */
-  --secondary: #7BA888;
-  --secondary-foreground: #09130D;
-  --secondary-soft: #1B3125;
+  /* Calyvia Brand Secondary (Refined Emerald-Sage) */
+  --secondary: #00C853;
+  --secondary-foreground: #001A0B;
+  --secondary-soft: rgba(0, 200, 83, 0.1);
 
-  /* Calyvia Accent */
+  /* Calyvia Accent (Warm Amber / Gold for high-priority clinical alerts) */
   --accent: #E08C6E;
   --accent-foreground: #1A0D08;
-  --accent-soft: #301B14;
+  --accent-soft: #2E1A12;
 
-  /* Borders & Dividers */
-  --border: #23332A;
-  --border-subtle: #1A2620;
-  --border-strong: #2F4539;
-  --input: #141E1A;
-  --ring: rgba(72, 163, 104, 0.35);
+  /* Borders & Dividers (Subtle emerald-tinted dark borders) */
+  --border: #13271D;
+  --border-subtle: #0D1C14;
+  --border-strong: #1B3829;
+  --input: #040A07;
+  --ring: #00E676;
 
   /* Muted Text & Backgrounds */
-  --muted: #1B2923;
-  --muted-foreground: #94A69A;
+  --muted: #07120C;
+  --muted-foreground: #7E9988;
 
-  /* Status Colors */
-  --success: #34D399;
-  --success-foreground: #062013;
-  --success-soft: #0E291C;
-  --warning: #FBBF24;
-  --warning-foreground: #241A04;
-  --warning-soft: #2D2309;
-  --danger: #F87171;
-  --danger-foreground: #220808;
-  --danger-soft: #2E1313;
+  /* Status Colors (Preserving clinically important alerts) */
+  --success: #00E676;
+  --success-foreground: #001A0B;
+  --success-soft: rgba(0, 230, 118, 0.1);
+  --warning: #F59E0B;
+  --warning-foreground: #1F1300;
+  --warning-soft: rgba(245, 158, 11, 0.12);
+  --danger: #EF4444;
+  --danger-foreground: #220505;
+  --danger-soft: rgba(239, 68, 68, 0.12);
   --info: #38BDF8;
-  --info-soft: #0C2433;
+  --info-soft: rgba(56, 189, 248, 0.1);
 
   /* Elevation Shadows */
-  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
-  --shadow-elevated: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 2px 8px -2px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(19, 39, 29, 0.5);
+  --shadow-elevated: 0 10px 25px -5px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(19, 39, 29, 0.6);
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Crimson Pro', Georgia, serif;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.015em;
 }
 
 /* Custom scrollbars */

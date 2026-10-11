@@ -54,18 +54,8 @@ export class AuditService {
           },
         });
       }
-    } catch {
-      // In-memory fallback sample logs for dev/test
-      return [
-        {
-          id: 'mock-audit-1',
-          action: 'USER_LOGIN',
-          resource: 'AUTHENTICATION',
-          role: 'SUPER_ADMIN',
-          ipAddress: '127.0.0.1',
-          timestamp: new Date().toISOString(),
-        },
-      ];
+    } catch (err) {
+      console.warn('Audit logs fetch error:', err);
     }
     return [];
   }

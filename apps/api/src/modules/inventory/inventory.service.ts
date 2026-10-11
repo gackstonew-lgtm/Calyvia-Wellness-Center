@@ -50,31 +50,9 @@ export class InventoryService {
           orderBy: { name: 'asc' },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Inventory fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-item-1',
-        itemCode: 'MED-SYR-01',
-        name: 'Disposable Syringes 5ml (Box of 100)',
-        category: 'MEDICAL_SUPPLIES',
-        quantity: 45,
-        unit: 'boxes',
-        minAlertQty: 10,
-        unitCostKES: 1200,
-      },
-      {
-        id: 'mock-item-2',
-        itemCode: 'KTCH-RICE-01',
-        name: 'Basmati Rice (25kg bag)',
-        category: 'FOOD_KITCHEN',
-        quantity: 8,
-        unit: 'bags',
-        minAlertQty: 3,
-        unitCostKES: 4500,
-      },
-    ];
+    return [];
   }
 }

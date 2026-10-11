@@ -93,37 +93,9 @@ export class DetoxService {
           },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Detox episode history fetch error:', err);
     }
-
-    return {
-      id: detoxEpisodeId,
-      protocolType: 'ALCOHOL_CIWA',
-      medicalOfficer: 'Dr. Kevin Kiprotich',
-      isCompleted: false,
-      assessments: [
-        {
-          id: 'mock-assessment-1',
-          scoreType: 'CIWA_AR',
-          totalScore: 18,
-          severity: 'MODERATE',
-          evaluatedBy: 'Nurse Faith Wangari',
-          evaluatedAt: new Date().toISOString(),
-        },
-      ],
-      vitalsLogs: [
-        {
-          id: 'mock-vitals-1',
-          systolicBP: 138,
-          diastolicBP: 88,
-          pulseRate: 94,
-          temperatureC: 37.1,
-          spO2Percentage: 98,
-          recordedBy: 'Nurse Faith Wangari',
-          recordedAt: new Date().toISOString(),
-        },
-      ],
-    };
+    return null;
   }
 }

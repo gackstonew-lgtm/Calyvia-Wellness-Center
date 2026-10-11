@@ -82,21 +82,9 @@ export class MovementService {
           take: 20,
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Visitor logs fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-vis-1',
-        visitorName: 'Mary Wanjiru Mwangi',
-        nationalId: '24918231',
-        phoneNumber: '+254722889900',
-        patientName: 'James Mwangi',
-        relationship: 'Spouse',
-        belongingsChecked: true,
-        checkInTime: new Date().toISOString(),
-      },
-    ];
+    return [];
   }
 }

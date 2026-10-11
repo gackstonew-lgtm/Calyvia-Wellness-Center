@@ -111,8 +111,8 @@ module.exports = {
         }
       },
       fontFamily: {
-        serif: ['"Crimson Pro"', 'Georgia', 'serif'],
-        sans: ['"Outfit"', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['"Poppins"', 'system-ui', '-apple-system', 'sans-serif'],
+        serif: ['"Poppins"', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
       borderRadius: {

@@ -81,7 +81,9 @@ export class AiInstitutionalToolsService {
     return {
       toolName: 'get_appointments_summary',
       data: appointments,
-      summary: `Currently ${count} appointments on record. Highlights: MDT Review with Dr. Evelyn Wanjiku, CIWA Protocol Review, Individual CBT Therapy Sessions with Counsellor David, and Family Support Conferences.`,
+      summary: count === 0
+        ? 'No clinical appointments scheduled for today.'
+        : `Currently ${count} appointment${count === 1 ? '' : 's'} on record.`,
     };
   }
 
@@ -89,37 +91,26 @@ export class AiInstitutionalToolsService {
    * Tool: Retrieve aggregated, privacy-preserving patient census statistics
    */
   async getPatientStatistics(userRole: string = UserRole.SUPER_ADMIN): Promise<ToolResult> {
-    let patientCount = 28;
-    try {
-      if (this.prisma && this.prisma.patient) {
-        const patients = await this.prisma.patient.findMany({ select: { id: true, status: true, gender: true } });
-        patientCount = patients.length || 28;
-      }
-    } catch {
-      // fallback
-    }
-
+    const dash = await this.dashboardService.getExecutiveMetrics();
     const stats = {
-      totalActiveInpatients: 28,
-      totalCapacity: 32,
-      occupancyRate: '87.5%',
+      totalActiveInpatients: dash.census.occupiedBeds,
+      totalCapacity: dash.census.totalBeds,
+      occupancyRate: `${dash.census.occupancyRatePercentage}%`,
       wardBreakdown: {
-        detoxWard: { occupied: 6, capacity: 6, status: 'Full (High Acuity)' },
-        horizonWingMale: { occupied: 14, capacity: 16, status: '2 Available' },
-        serenityWingFemale: { occupied: 6, capacity: 8, status: '2 Available' },
-        vipSuite: { occupied: 2, capacity: 2, status: 'Full' },
+        detoxWard: { occupied: dash.census.detoxWardOccupancy, capacity: 6 },
+        inpatientMale: { occupied: dash.census.inpatientMaleOccupancy, capacity: 16 },
+        inpatientFemale: { occupied: dash.census.inpatientFemaleOccupancy, capacity: 8 },
+        vipSuite: { occupied: dash.census.vipOccupancy, capacity: 2 },
       },
       intakePipeline: {
-        enquiriesThisWeek: 12,
-        triagePending: 5,
-        admissionsScheduled: 3,
+        triagePending: dash.admissions.pendingIntakeLeads,
       },
     };
 
     return {
       toolName: 'get_patient_statistics',
       data: stats,
-      summary: `Inpatient census is 28/32 (87.5%). Detox Ward is at 100% capacity (6/6), Horizon Male Wing has 14/16 occupied, Serenity Female Wing has 6/8 occupied, VIP Suite is at 2/2. Admissions pipeline has 5 triage cases pending.`,
+      summary: `Inpatient census is ${dash.census.occupiedBeds}/${dash.census.totalBeds} (${dash.census.occupancyRatePercentage}%). Detox Ward: ${dash.census.detoxWardOccupancy}/6.`,
     };
   }
 
@@ -128,10 +119,11 @@ export class AiInstitutionalToolsService {
    */
   async getStaffWorkload(userRole: string = UserRole.SUPER_ADMIN): Promise<ToolResult> {
     const staff = await this.staffService.getStaffDirectory();
+    const count = staff.length;
     return {
       toolName: 'get_staff_workload',
       data: staff,
-      summary: `14 clinical and operational staff on active duty. Key leads include Dr. Evelyn Wanjiku (Medical Director/Psychiatrist, KMPDC-P5519), Nurse Faith Wangari (Senior Detox Nurse in Charge, NCK-RN-28410), Counsellor David Kilonzo (Head of Addiction Therapy). All medical licenses active.`,
+      summary: `${count} staff member${count === 1 ? '' : 's'} on record.`,
     };
   }
 
@@ -139,7 +131,6 @@ export class AiInstitutionalToolsService {
    * Tool: Retrieve financial and billing metrics
    */
   async getBillingSummary(userRole: string = UserRole.SUPER_ADMIN): Promise<ToolResult> {
-    // Role-based safeguard: only authorized roles can inspect finance details
     const authorizedRoles = [UserRole.SUPER_ADMIN, UserRole.FACILITY_ADMIN, UserRole.MEDICAL_DIRECTOR, UserRole.FINANCE_BILLING, UserRole.MANAGEMENT_EXECUTIVE];
     if (!authorizedRoles.includes(userRole as UserRole)) {
       return {
@@ -149,19 +140,18 @@ export class AiInstitutionalToolsService {
       };
     }
 
+    const dash = await this.dashboardService.getExecutiveMetrics();
     const billingData = {
-      mtdRevenueCollectedKES: 3840000.0,
-      outstandingBalancesKES: 620000.0,
-      darajaMpesaShare: '68.4%',
-      bankTransferShare: '31.6%',
-      recentInvoicesCount: 42,
-      averageStayInvoiceKES: 180000.0,
+      mtdRevenueCollectedKES: dash.financials.mtdRevenueCollected,
+      outstandingBalancesKES: dash.financials.outstandingBalances,
+      darajaMpesaShare: `${dash.financials.mpesaVolumePercentage}%`,
+      bankTransferShare: `${dash.financials.bankTransferPercentage}%`,
     };
 
     return {
       toolName: 'get_billing_summary',
       data: billingData,
-      summary: `MTD Revenue Collected: KES 3,840,000. Outstanding Receivables: KES 620,000. Payment breakdown: Safaricom M-Pesa Daraja accounts for 68.4% of collections, with 31.6% via direct bank transfer.`,
+      summary: `MTD Revenue Collected: KES ${dash.financials.mtdRevenueCollected.toLocaleString()}. Outstanding Receivables: KES ${dash.financials.outstandingBalances.toLocaleString()}.`,
     };
   }
 
