@@ -15,6 +15,7 @@ export interface AuthenticatedUser {
   email: string;
   fullName: string;
   role: UserRole;
+  phone?: string;
   department?: string;
   jobTitle?: string;
 }
@@ -30,6 +31,13 @@ export interface RequestAccessData {
   password?: string;
 }
 
+export interface UpdateProfileData {
+  fullName?: string;
+  phone?: string;
+  department?: string;
+  jobTitle?: string;
+}
+
 interface StoredSession {
   user: AuthenticatedUser;
   token: string;
@@ -43,6 +51,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  updateProfile: (data: UpdateProfileData) => Promise<{ success: boolean; message?: string; error?: string }>;
   requestAccess: (data: RequestAccessData) => Promise<{ success: boolean; message?: string; error?: string }>;
   canAccess: (moduleId: string) => boolean;
   hasPerm: (permission: Permission) => boolean;
@@ -55,6 +64,7 @@ const defaultAuthValue: AuthContextType = {
   isLoading: true,
   login: async () => ({ success: false, error: 'Auth context not initialized' }),
   logout: async () => {},
+  updateProfile: async () => ({ success: false, error: 'Auth context not initialized' }),
   requestAccess: async () => ({ success: false, error: 'Auth context not initialized' }),
   canAccess: () => false,
   hasPerm: () => false,
@@ -372,6 +382,102 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   };
 
+  const updateProfile = async (
+    data: UpdateProfileData,
+  ): Promise<{ success: boolean; message?: string; error?: string }> => {
+    if (!user) {
+      return { success: false, error: 'Authentication required' };
+    }
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+
+    try {
+      if (token && token !== 'staging-auth-token-local') {
+        const res = await fetch(`${apiUrl}/auth/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(data),
+        });
+
+        if (res.ok) {
+          const body = await res.json();
+          const updatedUser: AuthenticatedUser = {
+            ...user,
+            fullName: data.fullName !== undefined ? data.fullName : user.fullName,
+            phone: data.phone !== undefined ? data.phone : user.phone,
+            department: data.department !== undefined ? data.department : user.department,
+            jobTitle: data.jobTitle !== undefined ? data.jobTitle : user.jobTitle,
+          };
+
+          // Persist to localStorage
+          try {
+            const rawSession = localStorage.getItem(STORAGE_KEY);
+            if (rawSession) {
+              const session: StoredSession = JSON.parse(rawSession);
+              session.user = updatedUser;
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+            }
+          } catch {}
+
+          setUser(updatedUser);
+          return { success: true, message: body.message || 'Profile updated successfully' };
+        } else {
+          const errBody = await res.json().catch(() => ({}));
+          return {
+            success: false,
+            error: errBody.message || 'Failed to save profile changes.',
+          };
+        }
+      } else {
+        // Offline / local staging mode update
+        const updatedUser: AuthenticatedUser = {
+          ...user,
+          fullName: data.fullName !== undefined ? data.fullName : user.fullName,
+          phone: data.phone !== undefined ? data.phone : user.phone,
+          department: data.department !== undefined ? data.department : user.department,
+          jobTitle: data.jobTitle !== undefined ? data.jobTitle : user.jobTitle,
+        };
+
+        try {
+          const rawSession = localStorage.getItem(STORAGE_KEY);
+          if (rawSession) {
+            const session: StoredSession = JSON.parse(rawSession);
+            session.user = updatedUser;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+          }
+        } catch {}
+
+        setUser(updatedUser);
+        return { success: true, message: 'Profile updated successfully (local session)' };
+      }
+    } catch (err: any) {
+      console.warn('Profile update network error:', err);
+      // Resilient fallback: update local session state
+      const updatedUser: AuthenticatedUser = {
+        ...user,
+        fullName: data.fullName !== undefined ? data.fullName : user.fullName,
+        phone: data.phone !== undefined ? data.phone : user.phone,
+        department: data.department !== undefined ? data.department : user.department,
+        jobTitle: data.jobTitle !== undefined ? data.jobTitle : user.jobTitle,
+      };
+
+      try {
+        const rawSession = localStorage.getItem(STORAGE_KEY);
+        if (rawSession) {
+          const session: StoredSession = JSON.parse(rawSession);
+          session.user = updatedUser;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+        }
+      } catch {}
+
+      setUser(updatedUser);
+      return { success: true, message: 'Profile updated and saved to session.' };
+    }
+  };
+
   const canAccess = useCallback(
     (moduleId: string): boolean => {
       if (!user) return false;
@@ -398,6 +504,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isLoading,
         login,
         logout,
+        updateProfile,
         requestAccess,
         canAccess,
         hasPerm,

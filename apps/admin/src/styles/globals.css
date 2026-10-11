@@ -69,25 +69,25 @@
 }
 
 .dark {
-  /* Surface & Base Canvas (Premium AMOLED Pure Black + Layered Obsidian) */
-  --background: #000000;
-  --foreground: #E8F3EC;
-  --surface: #030806;
-  --surface-subtle: #060E0A;
-  --surface-elevated: #0B1812;
+  /* Surface & Base Canvas (Refined QC NetCore Near-Black & Charcoal Interface) */
+  --background: #080A0A;
+  --foreground: #F2F4F3;
+  --surface: #0B0D0D;
+  --surface-subtle: #121618;
+  --surface-elevated: #15191C;
 
   /* Cards & Modals */
-  --card: #040A07;
-  --card-foreground: #E8F3EC;
-  --card-inner: #07120C;
+  --card: #15191C;
+  --card-foreground: #F2F4F3;
+  --card-inner: #1B2024;
 
-  /* Calyvia Brand Primary (Vivid Emerald Green matching visual target) */
+  /* Calyvia Brand Primary (Retaining Calyvia's vivid emerald green accent) */
   --primary: #00E676;
   --primary-foreground: #001A0B;
   --primary-hover: #00F58A;
-  --primary-soft: rgba(0, 230, 118, 0.09);
+  --primary-soft: rgba(0, 230, 118, 0.1);
 
-  /* Calyvia Brand Secondary (Refined Emerald-Sage) */
+  /* Calyvia Brand Secondary (Refined emerald-sage) */
   --secondary: #00C853;
   --secondary-foreground: #001A0B;
   --secondary-soft: rgba(0, 200, 83, 0.1);
@@ -95,35 +95,35 @@
   /* Calyvia Accent (Warm Amber / Gold for high-priority clinical alerts) */
   --accent: #E08C6E;
   --accent-foreground: #1A0D08;
-  --accent-soft: #2E1A12;
+  --accent-soft: rgba(224, 140, 110, 0.15);
 
-  /* Borders & Dividers (Subtle emerald-tinted dark borders) */
-  --border: #13271D;
-  --border-subtle: #0D1C14;
-  --border-strong: #1B3829;
-  --input: #040A07;
+  /* Borders & Dividers (Subtle charcoal border matching #293137) */
+  --border: #293137;
+  --border-subtle: #1F252A;
+  --border-strong: #38424A;
+  --input: #1B2024;
   --ring: #00E676;
 
   /* Muted Text & Backgrounds */
-  --muted: #07120C;
-  --muted-foreground: #7E9988;
+  --muted: #1B2024;
+  --muted-foreground: #AAB4B2;
 
-  /* Status Colors (Preserving clinically important alerts) */
+  /* Status Colors (Accessible Contrast) */
   --success: #00E676;
   --success-foreground: #001A0B;
-  --success-soft: rgba(0, 230, 118, 0.1);
+  --success-soft: rgba(0, 230, 118, 0.12);
   --warning: #F59E0B;
   --warning-foreground: #1F1300;
-  --warning-soft: rgba(245, 158, 11, 0.12);
+  --warning-soft: rgba(245, 158, 11, 0.14);
   --danger: #EF4444;
   --danger-foreground: #220505;
-  --danger-soft: rgba(239, 68, 68, 0.12);
+  --danger-soft: rgba(239, 68, 68, 0.14);
   --info: #38BDF8;
-  --info-soft: rgba(56, 189, 248, 0.1);
+  --info-soft: rgba(56, 189, 248, 0.12);
 
-  /* Elevation Shadows */
-  --shadow-card: 0 2px 8px -2px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(19, 39, 29, 0.5);
-  --shadow-elevated: 0 10px 25px -5px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(19, 39, 29, 0.6);
+  /* Elevation Shadows (Restrained charcoal depth without harsh glows) */
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px -1px rgba(0, 0, 0, 0.5);
+  --shadow-elevated: 0 6px 16px -2px rgba(0, 0, 0, 0.65), 0 2px 6px -1px rgba(0, 0, 0, 0.4);
 }
 
 body {

@@ -21,6 +21,7 @@ import {
   Stethoscope,
 } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
+import { useAuth } from './AuthContext';
 
 interface Message {
   id: string;
@@ -76,6 +77,9 @@ export const CalyviaAiAssistant: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { theme } = useTheme();
+  const { user } = useAuth();
+
+  const userGreetingName = user?.fullName ? user.fullName.split(' ')[0] : 'there';
 
   // Initial welcome greeting
   useEffect(() => {
@@ -84,7 +88,7 @@ export const CalyviaAiAssistant: React.FC = () => {
         {
           id: 'welcome-1',
           role: 'assistant',
-          content: `Hello **Dr. Antony Baraka** 👋\n\nI am **Calyvia AI**, your institutional management copilot. I am connected live to Calyvia Wellness Center's PostgreSQL database and operational workflows.\n\nI can help you monitor **bed census**, review **today's appointments**, inspect **Daraja M-Pesa billing**, check **high-acuity detox protocols (CIWA/COWS)**, and navigate all **28 system modules**.\n\n*How can I assist you with center operations today?*`,
+          content: `Hello **${user?.fullName || 'there'}** 👋\n\nI am **Calyvia AI**, your institutional management copilot. I am connected live to Calyvia Wellness Center's PostgreSQL database and operational workflows.\n\nI can help you monitor **bed census**, review **today's appointments**, inspect **Daraja M-Pesa billing**, check **high-acuity detox protocols (CIWA/COWS)**, and navigate all **28 system modules**.\n\n*How can I assist you with center operations today?*`,
           timestamp: new Date().toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' }),
           suggestedFollowUps: [
             'Give me today\'s operational summary',
@@ -94,7 +98,7 @@ export const CalyviaAiAssistant: React.FC = () => {
         },
       ]);
     }
-  }, []);
+  }, [user]);
 
   // Auto-scroll to bottom of conversation
   useEffect(() => {

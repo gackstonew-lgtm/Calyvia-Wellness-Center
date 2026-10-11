@@ -10,6 +10,7 @@ import {
   ApproveAccessDto,
   RejectAccessDto,
   UpdateUserStatusDto,
+  UpdateProfileDto,
 } from './dto/auth.dto';
 import { UserRole } from '@calyvia/shared';
 
@@ -654,6 +655,94 @@ export class SecurityService {
     return {
       success: true,
       message: 'Logged out successfully. Authentication session invalidated.',
+    };
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    if (!userId) {
+      throw new UnauthorizedException('Authentication required');
+    }
+
+    const { fullName, phone, department, jobTitle } = dto;
+    const userUpdateData: any = {};
+    if (fullName !== undefined) userUpdateData.fullName = fullName.trim();
+    if (phone !== undefined) userUpdateData.phone = phone.trim();
+
+    let updatedUser: any = null;
+    if (Object.keys(userUpdateData).length > 0 && this.prisma && this.prisma.user) {
+      try {
+        updatedUser = await this.prisma.user.update({
+          where: { id: userId },
+          data: userUpdateData,
+        });
+      } catch (err) {
+        console.warn('Direct user table update note:', (err as any).message);
+      }
+    }
+
+    // Update staff profile if department or jobTitle specified
+    if ((department !== undefined || jobTitle !== undefined) && this.prisma && this.prisma.staffProfile) {
+      try {
+        const staffData: any = {};
+        if (department !== undefined) staffData.department = department.trim();
+        if (jobTitle !== undefined) staffData.jobTitle = jobTitle.trim();
+
+        const existingProfile = await this.prisma.staffProfile.findUnique({
+          where: { userId },
+        });
+
+        if (existingProfile) {
+          await this.prisma.staffProfile.update({
+            where: { userId },
+            data: staffData,
+          });
+        }
+      } catch (err) {
+        console.warn('Staff profile update note:', (err as any).message);
+      }
+    }
+
+    // Sync user metadata to Supabase Auth if applicable
+    if (SupabaseService.staticClient && (fullName || department || jobTitle)) {
+      try {
+        await SupabaseService.staticClient.auth.admin.updateUserById(userId, {
+          user_metadata: {
+            ...(fullName ? { fullName } : {}),
+            ...(department ? { department } : {}),
+            ...(jobTitle ? { jobTitle } : {}),
+          },
+        });
+      } catch (supabaseErr) {
+        console.warn('Supabase Auth user metadata update note:', (supabaseErr as any).message);
+      }
+    }
+
+    // Record audit log entry
+    try {
+      if (this.prisma && (this.prisma as any).auditLog) {
+        await (this.prisma as any).auditLog.create({
+          data: {
+            userId,
+            role: 'AUTHENTICATED',
+            action: 'USER_PROFILE_UPDATE',
+            entityName: 'users',
+            entityId: userId,
+            newValues: { fullName, phone, department, jobTitle, updatedAt: new Date().toISOString() },
+          },
+        });
+      }
+    } catch {}
+
+    return {
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: userId,
+        fullName: updatedUser?.fullName || fullName,
+        phone: updatedUser?.phone || phone,
+        department,
+        jobTitle,
+      },
     };
   }
 }

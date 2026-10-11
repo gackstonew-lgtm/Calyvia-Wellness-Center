@@ -91,11 +91,34 @@ const MODULE_TITLES: Record<string, string> = {
 };
 
 export default function AdminDashboardPage() {
-  const { user, token, isLoading, defaultModule } = useAuth();
+  const { user, token, isLoading, defaultModule, updateProfile } = useAuth();
   const [activeModule, setActiveModule] = useState<string>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [trendView, setTrendView] = useState<'weekly' | 'monthly'>('weekly');
+
+  // Profile Edit Form State
+  const [profileForm, setProfileForm] = useState({
+    fullName: user?.fullName || '',
+    phone: user?.phone || '',
+    department: user?.department || '',
+    jobTitle: user?.jobTitle || '',
+  });
+  const [profileSaving, setProfileSaving] = useState<boolean>(false);
+  const [profileSuccessMsg, setProfileSuccessMsg] = useState<string | null>(null);
+  const [profileErrorMsg, setProfileErrorMsg] = useState<string | null>(null);
+
+  // Sync profile form when user updates
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        fullName: user.fullName || '',
+        phone: user.phone || '',
+        department: user.department || '',
+        jobTitle: user.jobTitle || '',
+      });
+    }
+  }, [user]);
 
   // Synchronize active module with authorized role defaults
   useEffect(() => {
@@ -630,7 +653,11 @@ export default function AdminDashboardPage() {
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground font-sans mt-1">
                 {activeModule === 'dashboard'
-                  ? `${greeting.salutation}, ${user.fullName}. ${greeting.message}`
+                  ? `${greeting.salutation}${
+                      user?.fullName
+                        ? `, ${user.fullName.replace(/\s*\(.*?\)\s*/g, '').trim().split(' ')[0]}`
+                        : ''
+                    }. ${greeting.message}`
                   : `Calyvia Wellness Center • Enterprise HMIS / EMR System`}
               </p>
             </div>
@@ -2003,9 +2030,164 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* Module: 25. System Administration */}
+          {/* Module: 25. System Administration & Institutional Settings */}
           {activeModule === 'system_admin' && (
             <div className="space-y-6">
+              {/* My Profile / Personal Information Section */}
+              <div className="bg-card p-6 rounded-2xl border border-border shadow-card space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-border">
+                  <div>
+                    <h2 className="font-serif text-xl font-bold text-foreground">My Profile & Personal Information</h2>
+                    <p className="text-xs text-muted-foreground">Manage your contact information, credentials, and institutional staff details</p>
+                  </div>
+                  <span className="self-start sm:self-auto px-2.5 py-1 bg-primary-soft text-primary border border-primary/20 text-xs font-semibold rounded-full font-mono">
+                    {ROLE_DISPLAY_NAMES[user.role] || user.role}
+                  </span>
+                </div>
+
+                {profileSuccessMsg && (
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs flex items-center space-x-2">
+                    <Check className="w-4 h-4 flex-shrink-0" />
+                    <span>{profileSuccessMsg}</span>
+                  </div>
+                )}
+
+                {profileErrorMsg && (
+                  <div className="p-3 bg-danger-soft border border-danger/20 text-danger rounded-xl text-xs flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{profileErrorMsg}</span>
+                  </div>
+                )}
+
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setProfileSaving(true);
+                    setProfileSuccessMsg(null);
+                    setProfileErrorMsg(null);
+                    try {
+                      const res = await updateProfile({
+                        fullName: profileForm.fullName,
+                        phone: profileForm.phone,
+                        department: profileForm.department,
+                        jobTitle: profileForm.jobTitle,
+                      });
+                      if (res.success) {
+                        setProfileSuccessMsg(res.message || 'Profile changes saved successfully.');
+                      } else {
+                        setProfileErrorMsg(res.error || 'Failed to update profile.');
+                      }
+                    } catch {
+                      setProfileErrorMsg('An unexpected error occurred while saving your profile.');
+                    } finally {
+                      setProfileSaving(false);
+                    }
+                  }}
+                  className="space-y-4 text-xs font-sans"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-foreground font-semibold mb-1.5">
+                        Full Name / Preferred Display Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={profileForm.fullName}
+                        onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
+                        className="w-full bg-surface-subtle border border-border rounded-xl px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-xs"
+                        placeholder="e.g. Dr. Jane Muthoni"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-foreground font-semibold mb-1.5">
+                        Institutional Email Address <span className="text-[10px] text-muted-foreground font-normal">(Managed by Auth)</span>
+                      </label>
+                      <input
+                        type="email"
+                        disabled
+                        value={user.email}
+                        className="w-full bg-surface border border-border/60 rounded-xl px-3.5 py-2.5 text-muted-foreground cursor-not-allowed text-xs font-mono select-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-foreground font-semibold mb-1.5">
+                        Contact Phone Number (+254)
+                      </label>
+                      <input
+                        type="tel"
+                        value={profileForm.phone}
+                        onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                        className="w-full bg-surface-subtle border border-border rounded-xl px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-xs font-mono"
+                        placeholder="+254 700 000 000"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-foreground font-semibold mb-1.5">
+                        Clinical / Administrative Department
+                      </label>
+                      <input
+                        type="text"
+                        value={profileForm.department}
+                        onChange={(e) => setProfileForm({ ...profileForm, department: e.target.value })}
+                        className="w-full bg-surface-subtle border border-border rounded-xl px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-xs"
+                        placeholder="e.g. Psychiatry & Detox"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-foreground font-semibold mb-1.5">
+                        Professional Job Title / Designation
+                      </label>
+                      <input
+                        type="text"
+                        value={profileForm.jobTitle}
+                        onChange={(e) => setProfileForm({ ...profileForm, jobTitle: e.target.value })}
+                        className="w-full bg-surface-subtle border border-border rounded-xl px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-xs"
+                        placeholder="e.g. Consultant Psychiatrist & Medical Officer"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end space-x-3 pt-3 border-t border-border">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileForm({
+                          fullName: user.fullName || '',
+                          phone: user.phone || '',
+                          department: user.department || '',
+                          jobTitle: user.jobTitle || '',
+                        });
+                        setProfileSuccessMsg(null);
+                        setProfileErrorMsg(null);
+                      }}
+                      className="px-4 py-2 rounded-xl border border-border text-foreground hover:bg-surface-elevated font-medium transition-all text-xs"
+                    >
+                      Discard Changes
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={profileSaving}
+                      className="px-5 py-2 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary-hover shadow-xs active:scale-95 disabled:opacity-50 transition-all text-xs flex items-center space-x-1.5"
+                    >
+                      {profileSaving ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Saving Changes...</span>
+                        </>
+                      ) : (
+                        <span>Save Profile Changes</span>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Facility Master Configuration */}
               <div className="bg-card p-6 rounded-2xl border border-border shadow-card space-y-4">
                 <div>
                   <h2 className="font-serif text-xl font-bold text-foreground">Facility Master Configuration</h2>

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Get, Patch, Param, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SecurityService } from './security.service';
 import {
@@ -9,6 +9,7 @@ import {
   ApproveAccessDto,
   RejectAccessDto,
   UpdateUserStatusDto,
+  UpdateProfileDto,
 } from './dto/auth.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -125,5 +126,14 @@ export class SecurityController {
       authenticated: true,
       user,
     };
+  }
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update personal profile details for authenticated user' })
+  async updateProfile(@CurrentUser() user: any, @Body() dto: UpdateProfileDto) {
+    const userId = user?.id || user?.sub;
+    return this.securityService.updateProfile(userId, dto);
   }
 }

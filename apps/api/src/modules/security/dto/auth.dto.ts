@@ -112,3 +112,26 @@ export class UpdateUserStatusDto {
   @IsString()
   reason?: string;
 }
+
+export class UpdateProfileDto {
+  @ApiProperty({ example: 'Dr. Jane Muthoni', required: false })
+  @IsOptional()
+  @IsString()
+  fullName?: string;
+
+  @ApiProperty({ example: '+254712345678', required: false })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @ApiProperty({ example: 'Psychiatry & Detox', required: false })
+  @IsOptional()
+  @IsString()
+  department?: string;
+
+  @ApiProperty({ example: 'Consultant Psychiatrist', required: false })
+  @IsOptional()
+  @IsString()
+  jobTitle?: string;
+}
+
