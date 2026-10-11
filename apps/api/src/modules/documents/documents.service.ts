@@ -27,16 +27,10 @@ export class DocumentsService {
           },
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database service unavailable');
+    } catch (err: any) {
+      throw new Error(`Failed to create consent: ${err.message}`);
     }
-
-    return {
-      id: 'mock-consent-1',
-      ...dto,
-      isGranted: true,
-      signedAt: new Date().toISOString(),
-    };
   }
 
   async getConsents(patientId: string) {

@@ -37,18 +37,10 @@ export class CrmService {
           },
         });
       }
-    } catch {
-      // In-memory fallback
+      throw new Error('Database connection unavailable');
+    } catch (err: any) {
+      throw new Error(`Failed to create lead enquiry: ${err.message || 'Database error'}`);
     }
-
-    return {
-      id: 'mock-lead-1',
-      enquiryNumber: enqNumber,
-      fullName: dto.fullName,
-      phone,
-      pipelineStatus: 'NEW_INQUIRY',
-      createdAt: new Date().toISOString(),
-    };
   }
 
   async getLeads(status?: string) {

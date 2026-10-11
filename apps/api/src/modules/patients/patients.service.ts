@@ -54,27 +54,10 @@ export class PatientsService {
         });
         return this.sanitizePatient(patient);
       }
-    } catch {
-      // In-memory response fallback
+      throw new Error('Database connection unavailable');
+    } catch (err: any) {
+      throw new Error(`Failed to register patient: ${err.message || 'Database error'}`);
     }
-
-    return {
-      id: 'mock-patient-uuid-1',
-      registrationNumber: regNumber,
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      preferredName: dto.preferredName,
-      gender: dto.gender,
-      phone: normalizedPhone,
-      email: dto.email,
-      county: dto.county,
-      residentialAddress: dto.residentialAddress,
-      bloodGroup: dto.bloodGroup,
-      status: PatientStatus.ENQUIRY,
-      knownAllergies: dto.knownAllergies,
-      substanceHistory: dto.substanceHistory,
-      createdAt: new Date().toISOString(),
-    };
   }
 
   async findAll(query?: { search?: string; status?: string; limit?: number }) {

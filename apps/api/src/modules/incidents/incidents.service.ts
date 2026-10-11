@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { IncidentSeverity } from '@calyvia/shared';
 
@@ -21,6 +21,10 @@ export class IncidentsService {
   }
 
   async reportIncident(dto: CreateIncidentDto) {
+    if (!dto.description || !dto.category || !dto.severity) {
+      throw new BadRequestException('Incident category, severity, and description are required.');
+    }
+
     const incNumber = this.generateIncidentNumber();
 
     try {
@@ -31,31 +35,23 @@ export class IncidentsService {
             patientId: dto.patientId || null,
             severity: dto.severity as any,
             category: dto.category,
-            description: dto.description,
-            immediateAction: dto.immediateAction,
-            reportedBy: dto.reportedBy,
+            description: dto.description.trim(),
+            immediateAction: dto.immediateAction?.trim() || 'Immediate nursing & security evaluation',
+            reportedBy: dto.reportedBy || 'Staff Member',
           },
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database connection unavailable');
+    } catch (err: any) {
+      throw new BadRequestException(`Failed to report incident: ${err.message || 'Database error'}`);
     }
-
-    return {
-      id: 'mock-inc-1',
-      incidentNumber: incNumber,
-      ...dto,
-      isResolved: false,
-      reportedAt: new Date().toISOString(),
-    };
   }
 
   async getIncidents() {
     try {
       if (this.prisma && this.prisma.incidentReport) {
         return await this.prisma.incidentReport.findMany({
-          include: { patient: true },
-          orderBy: { reportedAt: 'desc' },
+          orderBy: { incidentNumber: 'desc' },
         });
       }
     } catch (err) {

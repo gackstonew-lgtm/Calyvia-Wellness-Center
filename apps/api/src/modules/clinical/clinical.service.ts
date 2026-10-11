@@ -35,22 +35,10 @@ export class ClinicalService {
         });
         return this.decryptNote(note);
       }
-    } catch {
-      // In-memory fallback
+      throw new Error('Database connection unavailable');
+    } catch (err: any) {
+      throw new Error(`Failed to record clinical note: ${err.message || 'Database error'}`);
     }
-
-    return {
-      id: 'mock-note-1',
-      patientId: dto.patientId,
-      authorId,
-      noteType: dto.noteType,
-      subjective: dto.subjective,
-      objective: dto.objective,
-      assessment: dto.assessment,
-      plan: dto.plan,
-      icd10Diagnosis: dto.icd10Diagnosis,
-      createdAt: new Date().toISOString(),
-    };
   }
 
   async getPatientNotes(patientId: string) {

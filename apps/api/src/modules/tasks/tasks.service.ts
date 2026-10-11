@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { TaskPriority, TaskStatus } from '@calyvia/shared';
 
@@ -15,30 +15,28 @@ export class TasksService {
   constructor(private prisma: PrismaService) {}
 
   async createTask(createdById: string, dto: CreateTaskDto) {
+    if (!dto.title || !dto.dueDate || !dto.assignedToId) {
+      throw new BadRequestException('Task title, due date, and assigned staff member are required.');
+    }
+
     try {
       if (this.prisma && this.prisma.staffTask) {
         return await this.prisma.staffTask.create({
           data: {
-            title: dto.title,
-            description: dto.description || null,
+            title: dto.title.trim(),
+            description: dto.description?.trim() || dto.title.trim(),
             priority: dto.priority || TaskPriority.MEDIUM,
             status: TaskStatus.PENDING,
             dueDate: new Date(dto.dueDate),
             assignedToId: dto.assignedToId,
-            createdById,
+            createdById: createdById || dto.assignedToId,
           },
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database connection unavailable');
+    } catch (err: any) {
+      throw new BadRequestException(`Failed to create task: ${err.message || 'Database error'}`);
     }
-
-    return {
-      id: 'mock-task-1',
-      ...dto,
-      status: TaskStatus.PENDING,
-      createdAt: new Date().toISOString(),
-    };
   }
 
   async getTasks(status?: string) {
@@ -46,7 +44,6 @@ export class TasksService {
       if (this.prisma && this.prisma.staffTask) {
         return await this.prisma.staffTask.findMany({
           where: status ? { status: status as any } : {},
-          include: { assignedTo: true },
           orderBy: { dueDate: 'asc' },
         });
       }

@@ -32,18 +32,10 @@ export class CommunicationService {
           },
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database service unavailable');
+    } catch (err: any) {
+      throw new Error(`Failed to send communication: ${err.message}`);
     }
-
-    return {
-      id: 'mock-comm-1',
-      recipient: normalizedRecipient,
-      channel: dto.channel,
-      status: 'DELIVERED',
-      body: dto.body,
-      sentAt: new Date().toISOString(),
-    };
   }
 
   async getRecentLogs() {

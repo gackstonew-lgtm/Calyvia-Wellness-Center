@@ -28,16 +28,10 @@ export class ReferralsService {
           },
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database service unavailable');
+    } catch (err: any) {
+      throw new Error(`Failed to create referral partner: ${err.message}`);
     }
-
-    return {
-      id: 'mock-partner-1',
-      ...dto,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-    };
   }
 
   async getPartners() {

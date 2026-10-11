@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 
 export interface CreateInventoryItemDto {
@@ -17,36 +17,36 @@ export class InventoryService {
   constructor(private prisma: PrismaService) {}
 
   async createItem(dto: CreateInventoryItemDto) {
+    if (!dto.itemCode || !dto.name || !dto.category) {
+      throw new BadRequestException('Item code, name, and category are required.');
+    }
+
     try {
       if (this.prisma && this.prisma.inventoryItem) {
         return await this.prisma.inventoryItem.create({
           data: {
-            itemCode: dto.itemCode,
-            name: dto.name,
-            category: dto.category,
-            quantity: dto.quantity,
-            unit: dto.unit,
-            minAlertQty: dto.minAlertQty,
-            unitCostKES: dto.unitCostKES,
+            itemCode: dto.itemCode.trim(),
+            name: dto.name.trim(),
+            category: dto.category.trim(),
+            quantity: Number(dto.quantity) || 0,
+            unit: dto.unit || 'PIECE',
+            minAlertQty: Number(dto.minAlertQty) || 10,
+            unitCostKES: Number(dto.unitCostKES) || 0,
             supplier: dto.supplier || null,
           },
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database connection unavailable');
+    } catch (err: any) {
+      throw new BadRequestException(`Failed to create inventory item: ${err.message || 'Database error'}`);
     }
-
-    return {
-      id: 'mock-item-1',
-      ...dto,
-    };
   }
 
   async getInventory(category?: string) {
     try {
       if (this.prisma && this.prisma.inventoryItem) {
         return await this.prisma.inventoryItem.findMany({
-          where: category ? { category } : {},
+          where: category && category !== 'ALL' ? { category } : {},
           orderBy: { name: 'asc' },
         });
       }

@@ -58,6 +58,16 @@ import {
 import { useAuth } from '../components/AuthContext';
 import { SignInPage } from '../components/SignInPage';
 import { canAccessModule, getDefaultModuleForRole, ROLE_DISPLAY_NAMES } from '@calyvia/shared';
+import { FamilyManagementView } from '../components/FamilyManagementView';
+import { CounsellingView } from '../components/CounsellingView';
+import { DocumentsView } from '../components/DocumentsView';
+import { MovementView } from '../components/MovementView';
+import { InventoryView } from '../components/InventoryView';
+import { TasksView } from '../components/TasksView';
+import { IncidentsView } from '../components/IncidentsView';
+import { ReferralsView } from '../components/ReferralsView';
+import { CommunicationView } from '../components/CommunicationView';
+import { AutomationView } from '../components/AutomationView';
 
 const MODULE_TITLES: Record<string, string> = {
   dashboard: 'Management Dashboard',
@@ -2217,41 +2227,106 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* Fallback for other modules */}
-          {activeModule !== 'dashboard' &&
-            activeModule !== 'billing' &&
-            activeModule !== 'detox' &&
-            activeModule !== 'ai_extension' &&
-            activeModule !== 'patients' &&
-            activeModule !== 'crm' &&
-            activeModule !== 'appointments' &&
-            activeModule !== 'clinical' &&
-            activeModule !== 'pharmacy' &&
-            activeModule !== 'rooms' &&
-            activeModule !== 'staff' &&
-            activeModule !== 'reports' &&
-            activeModule !== 'security' &&
-            activeModule !== 'system_admin' && (
-              <div className="bg-card p-8 sm:p-12 rounded-2xl border border-border shadow-card text-center space-y-4">
-                <div className="w-14 h-14 bg-primary-soft text-primary rounded-2xl flex items-center justify-center mx-auto shadow-xs">
-                  <ShieldCheck className="w-7 h-7" />
-                </div>
-                <h2 className="font-serif text-2xl font-bold text-foreground">
-                  {MODULE_TITLES[activeModule] || `${activeModule.replace('_', ' ')} Management`}
-                </h2>
-                <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-                  Module actively mounted. Full operational entity controls, data tables, and REST API endpoints available at <code className="text-primary font-mono bg-surface-subtle px-1.5 py-0.5 rounded border border-border">/api/v1/{activeModule}</code>.
-                </p>
-                <div className="pt-2">
-                  <button
-                    onClick={() => setActiveModule('dashboard')}
-                    className="px-4 py-2 bg-surface border border-border hover:bg-surface-elevated text-foreground text-xs font-semibold rounded-xl transition shadow-xs"
-                  >
-                    &larr; Return to Dashboard
-                  </button>
-                </div>
+          {/* Module: Family Management */}
+          {activeModule === 'family' && (
+            <FamilyManagementView
+              token={token}
+              apiUrl={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}
+            />
+          )}
+
+          {/* Module: Counselling & Therapy */}
+          {activeModule === 'counselling' && (
+            <CounsellingView
+              token={token}
+              apiUrl={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}
+            />
+          )}
+
+          {/* Module: Documents, Discharge & Aftercare */}
+          {(activeModule === 'documents' || activeModule === 'discharge' || activeModule === 'aftercare') && (
+            <DocumentsView
+              token={token}
+              apiUrl={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}
+            />
+          )}
+
+          {/* Module: Referral Partners */}
+          {activeModule === 'referrals' && (
+            <ReferralsView
+              token={token}
+              apiUrl={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}
+            />
+          )}
+
+          {/* Module: Patient Movement & Visitors */}
+          {activeModule === 'movement' && (
+            <MovementView
+              token={token}
+              apiUrl={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}
+            />
+          )}
+
+          {/* Module: Stores & General Inventory */}
+          {activeModule === 'inventory' && (
+            <InventoryView
+              token={token}
+              apiUrl={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}
+            />
+          )}
+
+          {/* Module: Staff Task Management */}
+          {activeModule === 'tasks' && (
+            <TasksView
+              token={token}
+              apiUrl={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}
+            />
+          )}
+
+          {/* Module: Incident & Risk Logs */}
+          {activeModule === 'incidents' && (
+            <IncidentsView
+              token={token}
+              apiUrl={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}
+            />
+          )}
+
+          {/* Module: Communications & Feedback */}
+          {(activeModule === 'communication' || activeModule === 'feedback') && (
+            <CommunicationView
+              token={token}
+              apiUrl={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}
+            />
+          )}
+
+          {/* Module: Integrations & Webhooks & Workflow Automation */}
+          {(activeModule === 'integrations' || activeModule === 'automation') && (
+            <AutomationView
+              token={token}
+              apiUrl={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}
+            />
+          )}
+
+          {/* Fallback for completely unrecognized modules */}
+          {!MODULE_TITLES[activeModule] && (
+            <div className="bg-card p-8 sm:p-12 rounded-2xl border border-border shadow-card text-center space-y-4">
+              <div className="w-14 h-14 bg-surface-elevated text-muted-foreground rounded-2xl flex items-center justify-center mx-auto shadow-xs">
+                <AlertCircle className="w-7 h-7" />
               </div>
-            )}
+              <h2 className="font-serif text-2xl font-bold text-foreground">Module Not Found</h2>
+              <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+                The requested operational section <code className="font-mono text-primary bg-surface-subtle px-1.5 py-0.5 rounded border border-border">{activeModule}</code> could not be located in this administrative console.
+              </p>
+              <div className="pt-2">
+                <button
+                  onClick={() => setActiveModule('dashboard')}
+                  className="px-4 py-2 bg-surface border border-border hover:bg-surface-elevated text-foreground text-xs font-semibold rounded-xl transition shadow-xs"
+                >
+                  &larr; Return to Dashboard
+                </button>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 

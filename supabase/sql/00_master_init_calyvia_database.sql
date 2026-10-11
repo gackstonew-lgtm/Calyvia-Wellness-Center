@@ -837,6 +837,53 @@ CREATE TABLE IF NOT EXISTS public.system_settings (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- ==============================================================================
+-- Idempotent Column Reconciliations for Full Application Domain Compatibility
+-- ==============================================================================
+ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS preferred_name TEXT;
+ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS blood_group TEXT;
+ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS residential_address TEXT;
+
+ALTER TABLE public.counselling_sessions ALTER COLUMN admission_id DROP NOT NULL;
+ALTER TABLE public.counselling_sessions ADD COLUMN IF NOT EXISTS patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE;
+ALTER TABLE public.counselling_sessions ADD COLUMN IF NOT EXISTS counsellor_name TEXT;
+ALTER TABLE public.counselling_sessions ADD COLUMN IF NOT EXISTS duration_mins INT DEFAULT 60;
+ALTER TABLE public.counselling_sessions ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ;
+ALTER TABLE public.counselling_sessions ADD COLUMN IF NOT EXISTS session_notes_enc TEXT;
+ALTER TABLE public.counselling_sessions ADD COLUMN IF NOT EXISTS is_attended BOOLEAN DEFAULT true;
+
+ALTER TABLE public.appointments ALTER COLUMN staff_id DROP NOT NULL;
+ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS title TEXT;
+ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS staff_member_name TEXT;
+
+ALTER TABLE public.invoices ALTER COLUMN admission_id DROP NOT NULL;
+ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE;
+ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS paid_amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00;
+
+ALTER TABLE public.payments ADD COLUMN IF NOT EXISTS received_by TEXT;
+ALTER TABLE public.payments ADD COLUMN IF NOT EXISTS transaction_ref TEXT;
+
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS enquiry_number TEXT;
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS channel TEXT DEFAULT 'DIRECT_WEBSITE';
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS substances_used TEXT;
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS urgency_level TEXT DEFAULT 'ROUTINE';
+ALTER TABLE public.leads ALTER COLUMN primary_concern DROP NOT NULL;
+
+ALTER TABLE public.clinical_notes ALTER COLUMN admission_id DROP NOT NULL;
+ALTER TABLE public.clinical_notes ADD COLUMN IF NOT EXISTS patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE;
+ALTER TABLE public.clinical_notes ADD COLUMN IF NOT EXISTS icd10_diagnosis TEXT;
+ALTER TABLE public.clinical_notes ADD COLUMN IF NOT EXISTS is_locked BOOLEAN DEFAULT true;
+ALTER TABLE public.clinical_notes ADD COLUMN IF NOT EXISTS version INT DEFAULT 1;
+
+ALTER TABLE public.detox_episodes ALTER COLUMN admission_id DROP NOT NULL;
+ALTER TABLE public.detox_episodes ADD COLUMN IF NOT EXISTS patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE;
+ALTER TABLE public.detox_episodes ADD COLUMN IF NOT EXISTS medical_officer TEXT;
+ALTER TABLE public.detox_episodes ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT false;
+
+ALTER TABLE public.withdrawal_assessments ALTER COLUMN assessor_id DROP NOT NULL;
+ALTER TABLE public.withdrawal_assessments ADD COLUMN IF NOT EXISTS evaluated_by TEXT;
+
+
 
 -- ==============================================================================
 -- 04_indexes.sql

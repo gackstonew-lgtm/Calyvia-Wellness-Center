@@ -26,15 +26,10 @@ export class AftercareService {
           },
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database service unavailable');
+    } catch (err: any) {
+      throw new Error(`Failed to record checkin: ${err.message}`);
     }
-
-    return {
-      id: 'mock-checkin-1',
-      ...dto,
-      conductedAt: new Date().toISOString(),
-    };
   }
 
   async getActivePlans() {
