@@ -59,6 +59,37 @@ import { useAuth } from '../components/AuthContext';
 import { SignInPage } from '../components/SignInPage';
 import { canAccessModule, getDefaultModuleForRole, ROLE_DISPLAY_NAMES } from '@calyvia/shared';
 
+const MODULE_TITLES: Record<string, string> = {
+  dashboard: 'Management Dashboard',
+  reports: 'Reports & Analytics',
+  patients: 'Patients & Family',
+  crm: 'Admissions & Referrals',
+  family: 'Family Management',
+  referrals: 'Referral Partners',
+  documents: 'Documents, Discharge & Aftercare',
+  clinical: 'Clinical Care & Detox',
+  detox: 'Detox Management',
+  counselling: 'Counselling & Therapy',
+  appointments: 'Appointments & Calendar',
+  pharmacy: 'Pharmacy & Inventory',
+  rooms: 'Facility & Patient Flow',
+  movement: 'Patient Movement & Visitors',
+  billing: 'Billing & Payments',
+  incidents: 'Incidents & Risk',
+  staff: 'Staff & Tasks',
+  tasks: 'Task Management',
+  inventory: 'Stores & General Inventory',
+  discharge: 'Discharge Records & Checklist',
+  aftercare: 'Aftercare & Recovery Cadence',
+  communication: 'Communications & Feedback',
+  feedback: 'Patient Feedback & Complaints',
+  security: 'User Accounts & Security',
+  system_admin: 'Administration & Intelligence',
+  integrations: 'Integrations & Webhooks',
+  automation: 'Workflow Automation',
+  ai_extension: 'AI Assistant & Intelligence',
+};
+
 export default function AdminDashboardPage() {
   const { user, token, isLoading, defaultModule } = useAuth();
   const [activeModule, setActiveModule] = useState<string>('dashboard');
@@ -594,8 +625,8 @@ export default function AdminDashboardPage() {
           {/* Executive Overview Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-border/60">
             <div>
-              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground tracking-tight capitalize">
-                {activeModule === 'dashboard' ? 'Dashboard' : `${activeModule.replace('_', ' ')} Management`}
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+                {MODULE_TITLES[activeModule] || `${activeModule.replace('_', ' ')} Management`}
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground font-sans mt-1">
                 {activeModule === 'dashboard'
@@ -2023,8 +2054,8 @@ export default function AdminDashboardPage() {
                 <div className="w-14 h-14 bg-primary-soft text-primary rounded-2xl flex items-center justify-center mx-auto shadow-xs">
                   <ShieldCheck className="w-7 h-7" />
                 </div>
-                <h2 className="font-serif text-2xl font-bold text-foreground capitalize">
-                  {activeModule.replace('_', ' ')} Management View
+                <h2 className="font-serif text-2xl font-bold text-foreground">
+                  {MODULE_TITLES[activeModule] || `${activeModule.replace('_', ' ')} Management`}
                 </h2>
                 <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
                   Module actively mounted. Full operational entity controls, data tables, and REST API endpoints available at <code className="text-primary font-mono bg-surface-subtle px-1.5 py-0.5 rounded border border-border">/api/v1/{activeModule}</code>.

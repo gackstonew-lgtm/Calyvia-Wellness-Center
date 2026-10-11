@@ -1,43 +1,192 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
+  LayoutDashboard,
   Users,
   UserCheck,
   Stethoscope,
-  Activity,
   HeartHandshake,
   Calendar,
+  Building2,
   CreditCard,
   Pill,
-  BedDouble,
-  Footprints,
-  ShieldAlert,
   UserCog,
-  CheckSquare,
-  PackageCheck,
   FileText,
-  LogOut,
-  Repeat,
-  Heart,
-  Share2,
+  ShieldAlert,
   MessageSquare,
-  Smile,
   BarChart3,
-  FileSpreadsheet,
-  Lock,
-  Settings,
-  Webhook,
-  Zap,
-  Sparkles,
-  LayoutDashboard,
-  X,
+  Sliders,
+  LogOut,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  X,
+  LucideIcon,
 } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { useAuth } from './AuthContext';
 import { canAccessModule, ROLE_DISPLAY_NAMES } from '@calyvia/shared';
+
+export interface SubmoduleItem {
+  id: string;
+  name: string;
+}
+
+export interface PrimaryModuleItem {
+  id: string;
+  name: string;
+  icon: LucideIcon;
+  submodules?: SubmoduleItem[];
+}
+
+export interface NavigationSection {
+  category: string;
+  modules: PrimaryModuleItem[];
+}
+
+export const NAVIGATION_STRUCTURE: NavigationSection[] = [
+  {
+    category: 'OVERVIEW',
+    modules: [
+      {
+        id: 'dashboard',
+        name: 'Management Dashboard',
+        icon: LayoutDashboard,
+      },
+      {
+        id: 'reports',
+        name: 'Reports & Analytics',
+        icon: BarChart3,
+      },
+    ],
+  },
+  {
+    category: 'PATIENT SERVICES',
+    modules: [
+      {
+        id: 'patients',
+        name: 'Patients & Family',
+        icon: Users,
+        submodules: [
+          { id: 'patients', name: 'Patient Registry & Profiles' },
+          { id: 'family', name: 'Family Management & Contacts' },
+        ],
+      },
+      {
+        id: 'crm',
+        name: 'Admissions & Referrals',
+        icon: UserCheck,
+        submodules: [
+          { id: 'crm', name: 'CRM & Intake Pipeline' },
+          { id: 'referrals', name: 'Referral Partners' },
+        ],
+      },
+      {
+        id: 'counselling',
+        name: 'Counselling & Therapy',
+        icon: HeartHandshake,
+      },
+      {
+        id: 'appointments',
+        name: 'Appointments & Calendar',
+        icon: Calendar,
+      },
+      {
+        id: 'documents',
+        name: 'Documents, Discharge & Aftercare',
+        icon: FileText,
+        submodules: [
+          { id: 'documents', name: 'Digital Forms & Consents' },
+          { id: 'discharge', name: 'Discharge Records & Checklist' },
+          { id: 'aftercare', name: 'Aftercare & Recovery Cadence' },
+        ],
+      },
+    ],
+  },
+  {
+    category: 'CLINICAL & FACILITY',
+    modules: [
+      {
+        id: 'clinical',
+        name: 'Clinical Care & Detox',
+        icon: Stethoscope,
+        submodules: [
+          { id: 'clinical', name: 'Clinical Records & Notes' },
+          { id: 'detox', name: 'Detox (CIWA/COWS & Vitals)' },
+        ],
+      },
+      {
+        id: 'rooms',
+        name: 'Facility & Patient Flow',
+        icon: Building2,
+        submodules: [
+          { id: 'rooms', name: 'Rooms & Bed Allocation' },
+          { id: 'movement', name: 'Movement, Leaves & Visitors' },
+        ],
+      },
+      {
+        id: 'pharmacy',
+        name: 'Pharmacy & Inventory',
+        icon: Pill,
+        submodules: [
+          { id: 'pharmacy', name: 'Pharmacy & e-MAR Chart' },
+          { id: 'inventory', name: 'Stores & General Inventory' },
+        ],
+      },
+      {
+        id: 'incidents',
+        name: 'Incidents & Risk',
+        icon: ShieldAlert,
+      },
+    ],
+  },
+  {
+    category: 'OPERATIONS',
+    modules: [
+      {
+        id: 'billing',
+        name: 'Billing & Payments',
+        icon: CreditCard,
+      },
+      {
+        id: 'staff',
+        name: 'Staff & Tasks',
+        icon: UserCog,
+        submodules: [
+          { id: 'staff', name: 'Staff Profiles & Roster' },
+          { id: 'tasks', name: 'Task Management & Handovers' },
+        ],
+      },
+      {
+        id: 'communication',
+        name: 'Communications & Feedback',
+        icon: MessageSquare,
+        submodules: [
+          { id: 'communication', name: 'SMS & WhatsApp Broadcast' },
+          { id: 'feedback', name: 'Patient Feedback & Complaints' },
+        ],
+      },
+    ],
+  },
+  {
+    category: 'SYSTEM',
+    modules: [
+      {
+        id: 'system_admin',
+        name: 'Administration & Intelligence',
+        icon: Sliders,
+        submodules: [
+          { id: 'system_admin', name: 'System Settings' },
+          { id: 'security', name: 'User Accounts & Security' },
+          { id: 'integrations', name: 'Integrations & Webhooks' },
+          { id: 'automation', name: 'Workflow Automation' },
+          { id: 'ai_extension', name: 'AI Assistant & Intelligence' },
+        ],
+      },
+    ],
+  },
+];
 
 interface SidebarProps {
   currentModule: string;
@@ -59,76 +208,74 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { theme } = useTheme();
   const { user, logout } = useAuth();
 
-  const moduleSections = [
-    {
-      category: 'Overview & Executive',
-      items: [
-        { id: 'dashboard', name: 'Management Dashboard', icon: LayoutDashboard },
-        { id: 'reports', name: 'Reports & Analytics', icon: FileSpreadsheet },
-      ],
-    },
-    {
-      category: 'Intake & Relationships',
-      items: [
-        { id: 'patients', name: 'Patient Registry', icon: Users },
-        { id: 'crm', name: 'CRM & Admissions Pipeline', icon: UserCheck },
-        { id: 'family', name: 'Family Management', icon: Heart },
-        { id: 'referrals', name: 'Referral Partners', icon: Share2 },
-        { id: 'documents', name: 'Digital Forms & Consents', icon: FileText },
-      ],
-    },
-    {
-      category: 'Clinical & Inpatient Care',
-      items: [
-        { id: 'clinical', name: 'Clinical Records & MDT', icon: Stethoscope },
-        { id: 'detox', name: 'Detox (CIWA/COWS & Vitals)', icon: Activity },
-        { id: 'counselling', name: 'Counselling & Therapy', icon: HeartHandshake },
-        { id: 'appointments', name: 'Appointments & Calendar', icon: Calendar },
-        { id: 'pharmacy', name: 'Pharmacy & e-MAR Chart', icon: Pill },
-        { id: 'rooms', name: 'Rooms & Bed Allocation', icon: BedDouble },
-      ],
-    },
-    {
-      category: 'Finance, Operations & Safety',
-      items: [
-        { id: 'billing', name: 'Billing & Daraja M-Pesa', icon: CreditCard },
-        { id: 'movement', name: 'Movement & Visitors', icon: Footprints },
-        { id: 'incidents', name: 'Incidents & Risk Matrix', icon: ShieldAlert },
-        { id: 'staff', name: 'Staff & Licence Roster', icon: UserCog },
-        { id: 'tasks', name: 'Task Management', icon: CheckSquare },
-        { id: 'inventory', name: 'Stores & Inventory', icon: PackageCheck },
-      ],
-    },
-    {
-      category: 'Transitions & Recovery',
-      items: [
-        { id: 'discharge', name: 'Discharge Management', icon: LogOut },
-        { id: 'aftercare', name: 'Aftercare & Recovery', icon: Repeat },
-        { id: 'communication', name: 'SMS & WhatsApp Hub', icon: MessageSquare },
-        { id: 'feedback', name: 'Feedback & Complaints', icon: Smile },
-      ],
-    },
-    {
-      category: 'Governance & Extensions',
-      items: [
-        { id: 'security', name: 'Security & Audit Trail', icon: Lock },
-        { id: 'system_admin', name: 'System Administration', icon: Settings },
-        { id: 'integrations', name: 'Integrations & Webhooks', icon: Webhook },
-        { id: 'automation', name: 'BullMQ Automation', icon: Zap },
-        { id: 'ai_extension', name: 'AI Extension Boundary', icon: Sparkles },
-      ],
-    },
-  ];
+  // Find parent module of a given subId
+  const getParentModuleId = (subId: string): string => {
+    for (const section of NAVIGATION_STRUCTURE) {
+      for (const mod of section.modules) {
+        if (mod.id === subId) return mod.id;
+        if (mod.submodules?.some((sub) => sub.id === subId)) return mod.id;
+      }
+    }
+    return subId;
+  };
 
-  const visibleSections = moduleSections
-    .map((section) => ({
-      ...section,
-      items: section.items.filter((item) => canAccessModule(user?.role, item.id)),
-    }))
-    .filter((section) => section.items.length > 0);
+  const activeParentId = getParentModuleId(currentModule);
 
-  const handleItemClick = (id: string) => {
-    onSelectModule(id);
+  // Expanded parent modules in sidebar
+  const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    if (activeParentId) {
+      initial[activeParentId] = true;
+    }
+    return initial;
+  });
+
+  // Automatically expand parent module whenever currentModule changes
+  useEffect(() => {
+    if (activeParentId) {
+      setExpandedParents((prev) => ({
+        ...prev,
+        [activeParentId]: true,
+      }));
+    }
+  }, [activeParentId]);
+
+  const toggleParentExpand = (moduleId: string) => {
+    setExpandedParents((prev) => ({
+      ...prev,
+      [moduleId]: !prev[moduleId],
+    }));
+  };
+
+  // Filter structure based on role access
+  const visibleSections = NAVIGATION_STRUCTURE.map((section) => {
+    const modules = section.modules
+      .map((mod) => {
+        // If module has submodules, filter submodules by role permission
+        if (mod.submodules && mod.submodules.length > 0) {
+          const allowedSubmodules = mod.submodules.filter((sub) =>
+            canAccessModule(user?.role, sub.id)
+          );
+          if (allowedSubmodules.length === 0) return null;
+          return {
+            ...mod,
+            submodules: allowedSubmodules,
+          };
+        }
+        // Direct module check
+        if (!canAccessModule(user?.role, mod.id)) return null;
+        return mod;
+      })
+      .filter((m): m is PrimaryModuleItem => m !== null);
+
+    return {
+      category: section.category,
+      modules,
+    };
+  }).filter((section) => section.modules.length > 0);
+
+  const handleSelect = (targetId: string) => {
+    onSelectModule(targetId);
     if (onCloseMobile) {
       onCloseMobile();
     }
@@ -144,7 +291,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         .slice(0, 2)
         .join('')
         .toUpperCase()
-    : 'DB';
+    : 'CW';
 
   const sidebarContent = (
     <div
@@ -152,7 +299,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         isCollapsed ? 'w-20' : 'w-72'
       } bg-surface text-foreground h-full flex flex-col border-r border-border select-none overflow-hidden transition-all duration-300`}
     >
-      {/* Brand Header with Optimized Transparent Logo & Collapse Arrow Button */}
+      {/* Brand Header with Transparent Logo & Collapse Arrow Button */}
       <div className="p-4 bg-surface border-b border-border flex items-center justify-between">
         <div className="flex items-center space-x-3 min-w-0 flex-1">
           <div className="relative w-10 h-10 flex-shrink-0 bg-primary-soft p-1.5 rounded-xl border border-primary/20 shadow-xs flex items-center justify-center">
@@ -202,7 +349,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Navigation List with rounded pill design */}
+      {/* Navigation List with 5 Visual Sections & Consolidated 15 Primary Modules */}
       <div className="flex-1 overflow-y-auto py-3 px-2 space-y-4 text-xs font-sans">
         {visibleSections.map((section, idx) => (
           <div key={idx} className="space-y-1">
@@ -211,37 +358,123 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {section.category}
               </h2>
             )}
-            {section.items.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentModule === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleItemClick(item.id)}
-                  title={isCollapsed ? item.name : undefined}
-                  aria-label={item.name}
-                  className={`w-full flex items-center ${
-                    isCollapsed ? 'justify-center px-2 py-3' : 'space-x-2.5 px-3.5 py-2.5'
-                  } rounded-2xl transition-all duration-150 text-left ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground font-semibold shadow-xs dark:shadow-[0_2px_12px_-2px_rgba(0,230,118,0.3)]'
-                      : 'text-muted-foreground hover:bg-surface-subtle hover:text-foreground'
-                  }`}
-                >
-                  <Icon
-                    className={`w-4 h-4 flex-shrink-0 ${
-                      isActive ? 'text-primary-foreground' : 'text-muted-foreground/70'
+            {section.modules.map((mod) => {
+              const Icon = mod.icon;
+              const hasSub = mod.submodules && mod.submodules.length > 0;
+              const isDirectActive = currentModule === mod.id;
+              const isChildActive = mod.submodules?.some((sub) => sub.id === currentModule);
+              const isParentActive = isDirectActive || isChildActive;
+              const isExpanded = !!expandedParents[mod.id];
+
+              if (isCollapsed) {
+                // Collapsed state: icon-only button triggering default subfeature
+                const defaultTarget = mod.submodules ? mod.submodules[0].id : mod.id;
+                return (
+                  <button
+                    key={mod.id}
+                    onClick={() => handleSelect(defaultTarget)}
+                    title={mod.name}
+                    aria-label={mod.name}
+                    className={`w-full flex items-center justify-center px-2 py-3 rounded-2xl transition-all duration-150 ${
+                      isParentActive
+                        ? 'bg-primary text-primary-foreground font-semibold shadow-xs dark:shadow-[0_2px_12px_-2px_rgba(0,230,118,0.3)]'
+                        : 'text-muted-foreground hover:bg-surface-subtle hover:text-foreground'
                     }`}
-                  />
-                  {!isCollapsed && <span className="truncate">{item.name}</span>}
-                </button>
+                  >
+                    <Icon
+                      className={`w-4 h-4 flex-shrink-0 ${
+                        isParentActive ? 'text-primary-foreground' : 'text-muted-foreground/70'
+                      }`}
+                    />
+                  </button>
+                );
+              }
+
+              // Expanded state: accordion with primary module and nested submodules
+              return (
+                <div key={mod.id} className="space-y-0.5">
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => {
+                        if (hasSub) {
+                          // If already on one of its children or direct, toggle expand
+                          // Otherwise navigate to default child and ensure expanded
+                          if (isParentActive) {
+                            toggleParentExpand(mod.id);
+                          } else {
+                            const defaultTarget = mod.submodules ? mod.submodules[0].id : mod.id;
+                            setExpandedParents((prev) => ({ ...prev, [mod.id]: true }));
+                            handleSelect(defaultTarget);
+                          }
+                        } else {
+                          handleSelect(mod.id);
+                        }
+                      }}
+                      title={mod.name}
+                      aria-label={mod.name}
+                      className={`flex-1 flex items-center justify-between space-x-2.5 px-3 py-2 rounded-2xl transition-all duration-150 text-left ${
+                        isParentActive
+                          ? 'bg-primary/10 text-primary font-semibold'
+                          : 'text-muted-foreground hover:bg-surface-subtle hover:text-foreground'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2.5 min-w-0">
+                        <Icon
+                          className={`w-4 h-4 flex-shrink-0 ${
+                            isParentActive ? 'text-primary' : 'text-muted-foreground/70'
+                          }`}
+                        />
+                        <span className="truncate">{mod.name}</span>
+                      </div>
+                      {hasSub && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleParentExpand(mod.id);
+                          }}
+                          className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-muted-foreground/80 hover:text-foreground"
+                          aria-label={isExpanded ? `Collapse ${mod.name}` : `Expand ${mod.name}`}
+                        >
+                          <ChevronDown
+                            className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                              isExpanded ? 'rotate-180 text-primary' : ''
+                            }`}
+                          />
+                        </button>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Submenu Items */}
+                  {hasSub && isExpanded && (
+                    <div className="ml-5 pl-3 border-l border-border/70 space-y-0.5 py-1 animate-in fade-in-50 duration-150">
+                      {mod.submodules!.map((sub) => {
+                        const isSubActive = currentModule === sub.id;
+                        return (
+                          <button
+                            key={sub.id}
+                            onClick={() => handleSelect(sub.id)}
+                            className={`w-full text-left px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-all duration-150 truncate block ${
+                              isSubActive
+                                ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-surface-subtle'
+                            }`}
+                          >
+                            {sub.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
         ))}
       </div>
 
-      {/* User Profile Card & Sign Out at Bottom (Without visible Supabase connection label) */}
+      {/* User Profile Card & Sign Out at Bottom */}
       <div className="p-3 bg-surface-subtle border-t border-border space-y-2">
         <div
           className={`flex items-center ${
@@ -304,4 +537,3 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </>
   );
 };
-
