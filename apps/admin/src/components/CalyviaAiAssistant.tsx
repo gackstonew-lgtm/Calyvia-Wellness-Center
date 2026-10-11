@@ -40,6 +40,33 @@ const DEFAULT_SUGGESTED_PROMPTS = [
   'How do I register a patient in CRM?',
 ];
 
+interface HeadsetIconProps extends React.SVGProps<SVGSVGElement> {}
+
+export const PulseHeadsetIcon: React.FC<HeadsetIconProps> = ({ className, ...props }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    {...props}
+  >
+    {/* Headset arc */}
+    <path d="M4 12V9a8 8 0 0 1 16 0v3" />
+    {/* Left earpiece */}
+    <rect x="2" y="11" width="4" height="6" rx="2" />
+    {/* Right earpiece */}
+    <rect x="18" y="11" width="4" height="6" rx="2" />
+    {/* Microphone boom and mic */}
+    <path d="M19 17v1a3 3 0 0 1-3 3h-2" />
+    <circle cx="13" cy="21" r="1" fill="currentColor" />
+    {/* Center vital/sound wave bridging the ears */}
+    <path d="M6 14h3l1.5-2.5 2 5 1.5-2.5h4" />
+  </svg>
+);
+
 export const CalyviaAiAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
@@ -257,7 +284,7 @@ export const CalyviaAiAssistant: React.FC = () => {
             aria-label="Open Calyvia AI assistant"
             className="group relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-primary hover:bg-primary-hover active:scale-95 text-primary-foreground rounded-full shadow-elevated border border-primary/20 hover:-translate-y-1 transition-all duration-200"
           >
-            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground group-hover:rotate-12 transition-transform duration-200" />
+            <PulseHeadsetIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground group-hover:scale-105 transition-transform duration-200" />
             <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-primary animate-pulse" />
           </button>
         )}
@@ -276,7 +303,7 @@ export const CalyviaAiAssistant: React.FC = () => {
           <div className="p-3.5 bg-surface-subtle border-b border-border flex items-center justify-between flex-shrink-0 select-none">
             <div className="flex items-center space-x-2.5 min-w-0">
               <div className="w-8 h-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 shadow-xs">
-                <Sparkles className="w-4 h-4" />
+                <PulseHeadsetIcon className="w-4 h-4 text-primary-foreground" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center space-x-2">

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { useAuth } from './AuthContext';
-import { canAccessModule, ROLE_DISPLAY_NAMES } from '@calyvia/shared';
+import { canAccessModule } from '@calyvia/shared';
 
 export interface SubmoduleItem {
   id: string;
@@ -281,17 +281,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const displayName = user?.fullName || 'Clinical Staff';
-  const roleTitle = user?.role ? (ROLE_DISPLAY_NAMES[user.role] || user.role) : 'Medical Director / Admin';
-  const initials = user?.fullName
-    ? user.fullName
-        .split(' ')
-        .map((n) => n[0])
-        .filter(Boolean)
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
-    : 'CW';
+  const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } catch (err) {
+      console.error('Logout error:', err);
+      setIsLoggingOut(false);
+    }
+  };
 
   const sidebarContent = (
     <div
@@ -474,41 +475,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ))}
       </div>
 
-      {/* User Profile Card & Sign Out at Bottom */}
-      <div className="p-3 bg-surface-subtle border-t border-border space-y-2">
-        <div
-          className={`flex items-center ${
-            isCollapsed ? 'justify-center p-1.5' : 'justify-between p-2'
-          } rounded-xl bg-surface border border-border shadow-xs`}
+      {/* Minimal Logout Button at Bottom of Sidebar */}
+      <div className="p-3 bg-surface-subtle border-t border-border">
+        <button
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          title="Logout from Calyvia HMIS"
+          aria-label="Logout"
+          className={`w-full flex items-center ${
+            isCollapsed ? 'justify-center p-2.5' : 'space-x-2.5 px-3.5 py-2.5'
+          } rounded-xl border border-border bg-surface hover:bg-danger-soft hover:border-danger/30 text-muted-foreground hover:text-danger active:scale-[0.98] transition-all duration-150 cursor-pointer shadow-xs disabled:opacity-50`}
         >
-          <div className="flex items-center space-x-2.5 min-w-0">
-            <div
-              className="relative w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-xs"
-              title={displayName}
-            >
-              <span>{initials}</span>
-              <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border-2 border-surface" />
-            </div>
-            {!isCollapsed && (
-              <div className="min-w-0">
-                <div className="text-xs font-semibold text-foreground truncate flex items-center gap-1">
-                  <span>{displayName}</span>
-                </div>
-                <p className="text-[10px] text-muted-foreground truncate">{roleTitle}</p>
-              </div>
-            )}
-          </div>
+          <LogOut className="w-4 h-4 flex-shrink-0" />
           {!isCollapsed && (
-            <button
-              title="Sign Out"
-              aria-label="Sign Out"
-              onClick={logout}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-danger hover:bg-danger-soft transition-colors cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            <span className="text-xs font-semibold truncate">
+              {isLoggingOut ? 'Signing out...' : 'Logout'}
+            </span>
           )}
-        </div>
+        </button>
       </div>
     </div>
   );
