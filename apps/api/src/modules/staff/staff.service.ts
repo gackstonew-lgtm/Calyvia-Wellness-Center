@@ -52,7 +52,7 @@ export class StaffService {
               board: p.licenseBoard || 'Regulatory Board',
               expiryDate: p.licenseExpiryDate,
               daysRemaining,
-              status: daysRemaining < 0 ? 'EXPIRED' : daysRemaining <= 90 ? 'EXPIRING_SOON' : 'VALID',
+              status: exp < now ? 'EXPIRED' : exp <= ninetyDaysOut ? 'EXPIRING_SOON' : 'VALID',
             };
           });
       }

@@ -10,7 +10,10 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  NODE_ENV = "production"
+  # NOTE: Do NOT set NODE_ENV=production here. npm omits devDependencies
+  # when NODE_ENV=production, which removes the `tsc` binary needed to
+  # build @calyvia/shared (`tsc: not found`, exit 127). `next build`
+  # forces NODE_ENV=production internally, so output stays a prod build.
   NPM_FLAGS = "--legacy-peer-deps"
 
 [[plugins]]

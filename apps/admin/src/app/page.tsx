@@ -735,7 +735,7 @@ export default function AdminDashboardPage() {
 
                 <div className="bg-card p-5 rounded-2xl border border-border shadow-card flex flex-col justify-between hover:border-border-strong hover:shadow-elevated transition-all duration-200 group">
                   <div className="flex items-center justify-between text-muted-foreground text-xs font-medium">
-                    <span className="text-foreground font-semibold">Today's Appointments</span>
+                    <span className="text-foreground font-semibold">Today&apos;s Appointments</span>
                     <div className="w-8 h-8 rounded-xl bg-secondary-soft text-secondary flex items-center justify-center group-hover:scale-105 transition-transform">
                       <CalendarIcon className="w-4 h-4" />
                     </div>
@@ -1020,7 +1020,7 @@ export default function AdminDashboardPage() {
                     <div className="p-4 sm:p-5 bg-surface-subtle border-b border-border flex items-center justify-between">
                       <div>
                         <h2 className="font-serif text-base font-bold text-foreground">
-                          Today's Appointments
+                          Today&apos;s Appointments
                         </h2>
                         <p className="text-[11px] text-muted-foreground">
                           Scheduled psychiatric evaluations & therapy
@@ -1340,7 +1340,7 @@ export default function AdminDashboardPage() {
                           <td colSpan={7} className="py-12 text-center text-xs text-muted-foreground">
                             <CalendarIcon className="w-6 h-6 mx-auto text-muted-foreground/40 mb-2" />
                             <p className="font-semibold text-foreground">No appointments scheduled</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">Use "Schedule Appointment" above to book therapy, reviews, or consultations.</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">Use &quot;Schedule Appointment&quot; above to book therapy, reviews, or consultations.</p>
                           </td>
                         </tr>
                       ) : (
@@ -1898,7 +1898,7 @@ export default function AdminDashboardPage() {
                     <span>get_appointments_summary</span>
                   </div>
                   <p className="text-muted-foreground text-[11px]">
-                    Inspects today's clinical consultations, MDT reviews, therapy schedules, and clinician assignments.
+                    Inspects today&apos;s clinical consultations, MDT reviews, therapy schedules, and clinician assignments.
                   </p>
                   <span className="text-[10px] font-mono text-emerald-500">Live Supabase Pooler</span>
                 </div>

@@ -218,8 +218,7 @@ export class AiExtensionService {
     ) {
       toolsExecuted.push('get_institutional_protocols');
       referencedModules.push('detox', 'clinical', 'pharmacy');
-      const protoRes = await this.toolsService.getInstitutionalProtocols();
-      const p = protoRes.data;
+      await this.toolsService.getInstitutionalProtocols();
 
       reply = `### 🩺 Calyvia Detoxification & Withdrawal Protocols\n\n` +
         `#### 1. Alcohol Withdrawal — CIWA-Ar Protocol\n` +
@@ -250,7 +249,7 @@ export class AiExtensionService {
     ) {
       toolsExecuted.push('get_staff_workload');
       referencedModules.push('staff', 'clinical');
-      const staffRes = await this.toolsService.getStaffWorkload(userRole);
+      await this.toolsService.getStaffWorkload(userRole);
 
       reply = `### 👥 Staff Directory & Active Duty Roster\n\n` +
         `**14 Active Staff Members** on shift today in Ruiru center:\n\n` +

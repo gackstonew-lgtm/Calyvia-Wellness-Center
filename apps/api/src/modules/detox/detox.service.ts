@@ -32,7 +32,7 @@ export interface RecordVitalsDto {
 export class DetoxService {
   constructor(private prisma: PrismaService) {}
 
-  async createEpisode(dto: CreateDetoxEpisodeDto) {
+  async startEpisode(dto: CreateDetoxEpisodeDto) {
     if (!dto.patientId || !dto.protocolType || !dto.medicalOfficer) {
       throw new BadRequestException('Patient ID, protocol type, and medical officer are required.');
     }

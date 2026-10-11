@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateLeadDto, UpdateLeadStatusDto, CreateAdmissionDto } from './dto/crm.dto';
 import { KenyaUtils, PatientStatus } from '@calyvia/shared';

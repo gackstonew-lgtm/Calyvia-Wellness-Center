@@ -9,17 +9,17 @@ export class DashboardService {
     let totalBeds = 0;
     let occupiedBeds = 0;
     let detoxWardOccupancy = 0;
-    let inpatientMaleOccupancy = 0;
-    let inpatientFemaleOccupancy = 0;
-    let vipOccupancy = 0;
+    const inpatientMaleOccupancy = 0;
+    const inpatientFemaleOccupancy = 0;
+    const vipOccupancy = 0;
     let admissionsThisMonth = 0;
     let activeDetoxCases = 0;
-    let activeRehabCases = 0;
+    const activeRehabCases = 0;
     let pendingIntakeLeads = 0;
     let therapySessionsToday = 0;
     let completedSessionsToday = 0;
     let pendingSessionsToday = 0;
-    let criticalVitalsAlerts = 0;
+    const criticalVitalsAlerts = 0;
     let mtdRevenue = 0;
     let outstandingBalances = 0;
     let mpesaVolumePercentage = 0;
@@ -27,7 +27,7 @@ export class DashboardService {
     let incidentsThisMonth = 0;
     let activeTasksPending = 0;
     let staffOnDuty = 0;
-    let aftercareSobrietyRate = 0;
+    const aftercareSobrietyRate = 0;
 
     try {
       if (this.prisma) {

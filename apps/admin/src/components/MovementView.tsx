@@ -230,7 +230,7 @@ export const MovementView: React.FC<MovementViewProps> = ({ token, apiUrl }) => 
             <DoorOpen className="w-8 h-8 text-muted-foreground/40 mx-auto" />
             <p className="text-xs font-semibold text-foreground">No active patient leaves or transfers recorded</p>
             <p className="text-[11px] text-muted-foreground max-w-md mx-auto">
-              All admitted patients currently accounted for inside facility premises. Click "Issue Movement Pass" above to record an authorized leave or hospital escort.
+              All admitted patients currently accounted for inside facility premises. Click &quot;Issue Movement Pass&quot; above to record an authorized leave or hospital escort.
             </p>
           </div>
         )}

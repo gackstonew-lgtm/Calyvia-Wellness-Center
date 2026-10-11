@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BillingService, CreateInvoiceDto } from './billing.service';
 import { PrismaService } from '../../database/prisma.service';
-import { PaymentMethod } from '@calyvia/shared';
 
 describe('BillingService (Financial Integrity & M-Pesa)', () => {
   let service: BillingService;

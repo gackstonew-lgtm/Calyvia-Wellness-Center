@@ -270,7 +270,7 @@ CALYVIA WELLNESS CENTER — PRIMARY ADMINISTRATOR PROVISIONING COMPLETE
 Account Email:       ${email}
 Account Role:        SUPER_ADMIN (Facility Director & Primary Authority)
 Status:              ACTIVE
-Temporary Password:  ${shouldResetPassword || true ? 'CONFIGURED (Must change on login)' : 'PRESERVED'}
+Temporary Password:  ${shouldResetPassword ? 'CONFIGURED (Must change on login)' : 'PRESERVED'}
 Security Definer:    Authoritative in PostgreSQL public.users + Supabase Auth
 ==============================================================================
     `);

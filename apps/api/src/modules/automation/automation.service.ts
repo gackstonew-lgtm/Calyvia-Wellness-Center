@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CommunicationService } from '../communication/communication.service';
-import { CommunicationChannel } from '@calyvia/shared';
 
 @Injectable()
 export class AutomationService {

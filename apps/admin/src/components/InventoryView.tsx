@@ -179,7 +179,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ token, apiUrl }) =
                     <PackageCheck className="w-6 h-6 mx-auto text-muted-foreground/40 mb-2" />
                     <p className="font-semibold text-foreground">No stock items found in inventory catalog</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Click "Add Inventory Item" above to register clinical consumables, linen, or reagents.
+                      Click &quot;Add Inventory Item&quot; above to register clinical consumables, linen, or reagents.
                     </p>
                   </td>
                 </tr>
