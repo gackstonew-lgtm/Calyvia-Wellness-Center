@@ -45,8 +45,12 @@ export const SignInPage: React.FC = () => {
     phone: '',
     department: 'Clinical Operations',
     jobTitle: '',
+    requestedRole: 'NURSE',
+    password: '',
+    confirmPassword: '',
     justification: '',
   });
+  const [showRequestPassword, setShowRequestPassword] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
   const [requestSuccess, setRequestSuccess] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
@@ -81,8 +85,28 @@ export const SignInPage: React.FC = () => {
       return;
     }
 
+    if (requestForm.password) {
+      if (requestForm.password.length < 6) {
+        setRequestError('Password must be at least 6 characters long.');
+        return;
+      }
+      if (requestForm.password !== requestForm.confirmPassword) {
+        setRequestError('Password and confirmation do not match.');
+        return;
+      }
+    }
+
     setIsRequesting(true);
-    const res = await requestAccess(requestForm);
+    const res = await requestAccess({
+      fullName: requestForm.fullName,
+      email: requestForm.email,
+      phone: requestForm.phone,
+      department: requestForm.department,
+      jobTitle: requestForm.jobTitle,
+      requestedRole: requestForm.requestedRole,
+      password: requestForm.password || undefined,
+      justification: requestForm.justification,
+    });
     setIsRequesting(false);
 
     if (res.success) {
@@ -392,6 +416,64 @@ export const SignInPage: React.FC = () => {
                         placeholder="e.g. Registered Clinical Nurse"
                         className="w-full bg-surface-subtle border border-border rounded-xl pl-9 pr-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                       />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-foreground">Requested Role & Access Level</label>
+                    <div className="relative">
+                      <Shield className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <select
+                        value={requestForm.requestedRole}
+                        onChange={(e) => setRequestForm({ ...requestForm, requestedRole: e.target.value })}
+                        className="w-full bg-surface-subtle border border-border rounded-xl pl-9 pr-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      >
+                        <option value="NURSE">Nurse / Clinical Detox Ward (NURSE)</option>
+                        <option value="DOCTOR_PSYCHIATRIST">Doctor / Consultant Psychiatrist (DOCTOR_PSYCHIATRIST)</option>
+                        <option value="COUNSELLOR">Addiction Counsellor / Psychologist (COUNSELLOR)</option>
+                        <option value="PHARMACIST">Pharmacist / Dispensary (PHARMACIST)</option>
+                        <option value="ADMISSIONS_FRONT_DESK">Admissions / Reception Front Desk (ADMISSIONS_FRONT_DESK)</option>
+                        <option value="FINANCE_BILLING">Finance / Billing & Cashier (FINANCE_BILLING)</option>
+                        <option value="INVENTORY_STORE">Store & Inventory Manager (INVENTORY_STORE)</option>
+                        <option value="MEDICAL_DIRECTOR">Medical Director / Clinical Head (MEDICAL_DIRECTOR)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-foreground">Account Password</label>
+                      <div className="relative">
+                        <Lock className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type={showRequestPassword ? 'text' : 'password'}
+                          value={requestForm.password}
+                          onChange={(e) => setRequestForm({ ...requestForm, password: e.target.value })}
+                          placeholder="Min 6 chars"
+                          className="w-full bg-surface-subtle border border-border rounded-xl pl-9 pr-8 py-2 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowRequestPassword(!showRequestPassword)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showRequestPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-xs font-semibold text-foreground">Confirm Password</label>
+                      <div className="relative">
+                        <Lock className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type={showRequestPassword ? 'text' : 'password'}
+                          value={requestForm.confirmPassword}
+                          onChange={(e) => setRequestForm({ ...requestForm, confirmPassword: e.target.value })}
+                          placeholder="Confirm password"
+                          className="w-full bg-surface-subtle border border-border rounded-xl pl-9 pr-3.5 py-2 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-mono"
+                        />
+                      </div>
                     </div>
                   </div>
 

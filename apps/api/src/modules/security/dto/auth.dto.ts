@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
@@ -47,6 +47,17 @@ export class RequestAccessDto {
   @IsNotEmpty()
   jobTitle!: string;
 
+  @ApiProperty({ example: 'NURSE', required: false })
+  @IsOptional()
+  @IsString()
+  requestedRole?: string;
+
+  @ApiProperty({ example: 'InitialTempPassword#2026', required: false })
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  password?: string;
+
   @ApiProperty({ example: 'Joining clinical rotation in detox ward' })
   @IsString()
   @IsNotEmpty()
@@ -66,3 +77,38 @@ export class ChangePasswordDto {
   newPassword!: string;
 }
 
+export class ApproveAccessDto {
+  @ApiProperty({ example: 'NURSE', required: false })
+  @IsOptional()
+  @IsString()
+  assignedRole?: string;
+
+  @ApiProperty({ example: 'Verified with HR and professional board roster', required: false })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class RejectAccessDto {
+  @ApiProperty({ example: 'Institutional documentation incomplete' })
+  @IsString()
+  @IsNotEmpty()
+  reason!: string;
+}
+
+export class UpdateUserStatusDto {
+  @ApiProperty({ example: 'ACTIVE', enum: ['ACTIVE', 'SUSPENDED', 'DEACTIVATED'] })
+  @IsString()
+  @IsNotEmpty()
+  status!: string;
+
+  @ApiProperty({ example: 'NURSE', required: false })
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @ApiProperty({ example: 'Administrative review completed', required: false })
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}

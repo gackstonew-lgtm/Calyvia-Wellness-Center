@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { Header } from '../components/Header';
 import {
@@ -24,6 +24,7 @@ import {
   Check,
   PhoneCall,
   UserCheck,
+  UserX,
   Stethoscope,
   TrendingUp,
   FileText,
@@ -52,13 +53,14 @@ import {
   Webhook,
   Zap,
   ShieldAlert,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../components/AuthContext';
 import { SignInPage } from '../components/SignInPage';
 import { canAccessModule, getDefaultModuleForRole, ROLE_DISPLAY_NAMES } from '@calyvia/shared';
 
 export default function AdminDashboardPage() {
-  const { user, isLoading, defaultModule } = useAuth();
+  const { user, token, isLoading, defaultModule } = useAuth();
   const [activeModule, setActiveModule] = useState<string>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<number>(10);
@@ -88,6 +90,117 @@ export default function AdminDashboardPage() {
   const [patientSearch, setPatientSearch] = useState<string>('');
   const [patientStatusFilter, setPatientStatusFilter] = useState<string>('ALL');
   const [activeModal, setActiveModal] = useState<string | null>(null);
+
+  // Pending Employee Authorizations State
+  const [pendingEmployees, setPendingEmployees] = useState<Array<{
+    id: string;
+    email: string;
+    fullName: string;
+    phone: string;
+    role: string;
+    requestedRole: string;
+    approvalStatus: string;
+    createdAt: string;
+    staffProfile?: {
+      department: string;
+      jobTitle: string;
+      licenseNumber?: string;
+      licenseBoard?: string;
+    } | null;
+  }>>([]);
+  const [loadingPending, setLoadingPending] = useState<boolean>(false);
+  const [approvalActionLoading, setApprovalActionLoading] = useState<string | null>(null);
+  const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+  const [actionErrorMsg, setActionErrorMsg] = useState<string | null>(null);
+  const [roleSelections, setRoleSelections] = useState<Record<string, string>>({});
+
+  const fetchPendingEmployees = useCallback(async () => {
+    if (!token || (user?.role !== 'SUPER_ADMIN' && user?.role !== 'FACILITY_ADMIN')) return;
+    setLoadingPending(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const res = await fetch(`${apiUrl}/auth/pending-requests`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPendingEmployees(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch pending employees:', err);
+    } finally {
+      setLoadingPending(false);
+    }
+  }, [token, user?.role]);
+
+  useEffect(() => {
+    if (activeModule === 'staff' && (user?.role === 'SUPER_ADMIN' || user?.role === 'FACILITY_ADMIN')) {
+      fetchPendingEmployees();
+    }
+  }, [activeModule, user?.role, fetchPendingEmployees]);
+
+  const handleApproveEmployee = async (employeeId: string, assignedRole: string) => {
+    if (!token) return;
+    setApprovalActionLoading(employeeId);
+    setActionSuccessMsg(null);
+    setActionErrorMsg(null);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const res = await fetch(`${apiUrl}/auth/approve-request/${employeeId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ assignedRole, notes: 'Authorized via Staff Management console' }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setActionSuccessMsg(data.message || 'Staff account approved and activated successfully.');
+        await fetchPendingEmployees();
+      } else {
+        setActionErrorMsg(data.message || 'Failed to approve staff account.');
+      }
+    } catch {
+      setActionErrorMsg('Network error communicating with authentication service.');
+    } finally {
+      setApprovalActionLoading(null);
+    }
+  };
+
+  const handleRejectEmployee = async (employeeId: string) => {
+    const reason = window.prompt('Please provide a reason for declining this request:');
+    if (!reason || !reason.trim()) return;
+    if (!token) return;
+
+    setApprovalActionLoading(employeeId);
+    setActionSuccessMsg(null);
+    setActionErrorMsg(null);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const res = await fetch(`${apiUrl}/auth/reject-request/${employeeId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reason: reason.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setActionSuccessMsg('Access request was declined.');
+        await fetchPendingEmployees();
+      } else {
+        setActionErrorMsg(data.message || 'Failed to decline request.');
+      }
+    } catch {
+      setActionErrorMsg('Network error communicating with authentication service.');
+    } finally {
+      setApprovalActionLoading(null);
+    }
+  };
 
   // Patient Registration Form State
   const [newPatient, setNewPatient] = useState({
@@ -1108,6 +1221,153 @@ export default function AdminDashboardPage() {
           {/* Module: 12. Staff & Licence Roster */}
           {activeModule === 'staff' && (
             <div className="space-y-6">
+              {/* Administrator Approval Console: Visible to Super Admin & Facility Admin */}
+              {(user?.role === 'SUPER_ADMIN' || user?.role === 'FACILITY_ADMIN') && (
+                <div className="bg-card p-6 rounded-2xl border border-border shadow-card space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                          {pendingEmployees.length} PENDING AUTHORIZATION{pendingEmployees.length === 1 ? '' : 'S'}
+                        </span>
+                        <span className="text-xs text-muted-foreground font-mono">RBAC Provisioning</span>
+                      </div>
+                      <h2 className="font-serif text-xl font-bold text-foreground mt-1">
+                        Employee Registration & Authorization Console
+                      </h2>
+                      <p className="text-xs text-muted-foreground">
+                        Review submitted staff applications, verify institutional identity, assign clinical roles, and activate accounts.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={fetchPendingEmployees}
+                      disabled={loadingPending}
+                      className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-surface hover:bg-surface-elevated border border-border text-foreground text-xs font-semibold rounded-xl shadow-xs transition-all self-start sm:self-auto disabled:opacity-60"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 text-primary ${loadingPending ? 'animate-spin' : ''}`} />
+                      <span>Refresh Requests</span>
+                    </button>
+                  </div>
+
+                  {actionSuccessMsg && (
+                    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-xs flex items-center space-x-2">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                      <span>{actionSuccessMsg}</span>
+                    </div>
+                  )}
+
+                  {actionErrorMsg && (
+                    <div className="p-3 rounded-xl bg-danger-soft border border-danger/20 text-danger text-xs flex items-center space-x-2">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span>{actionErrorMsg}</span>
+                    </div>
+                  )}
+
+                  {loadingPending && pendingEmployees.length === 0 ? (
+                    <div className="py-8 text-center text-xs text-muted-foreground flex items-center justify-center space-x-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      <span>Loading pending authorization requests...</span>
+                    </div>
+                  ) : pendingEmployees.length === 0 ? (
+                    <div className="p-6 rounded-xl bg-surface-subtle border border-border text-center space-y-2">
+                      <ShieldCheck className="w-8 h-8 text-emerald-500 mx-auto" />
+                      <p className="text-xs font-semibold text-foreground">No Pending Authorization Requests</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        All employee accounts have been reviewed and approved. New registrations will appear here in real-time.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-xl border border-border mt-3">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-surface-elevated text-muted-foreground uppercase text-[10px] tracking-wider font-semibold border-b border-border">
+                          <tr>
+                            <th className="px-4 py-3">Applicant Name & Email</th>
+                            <th className="px-4 py-3">Department & Title</th>
+                            <th className="px-4 py-3">Phone</th>
+                            <th className="px-4 py-3">Requested Role</th>
+                            <th className="px-4 py-3">Assign Authorized Role</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {pendingEmployees.map((emp) => {
+                            const selectedRole = roleSelections[emp.id] || emp.requestedRole || emp.role || 'NURSE';
+                            const isBusy = approvalActionLoading === emp.id;
+
+                            return (
+                              <tr key={emp.id} className="hover:bg-surface-subtle transition-colors">
+                                <td className="px-4 py-3">
+                                  <div className="font-semibold text-foreground">{emp.fullName}</div>
+                                  <div className="text-[11px] text-muted-foreground font-mono">{emp.email}</div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="text-foreground">{emp.staffProfile?.department || 'General Staff'}</div>
+                                  <div className="text-[11px] text-muted-foreground">{emp.staffProfile?.jobTitle || 'Clinical Staff'}</div>
+                                </td>
+                                <td className="px-4 py-3 font-mono text-muted-foreground">
+                                  {emp.phone || '—'}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                                    {emp.requestedRole || emp.role}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <select
+                                    value={selectedRole}
+                                    onChange={(e) =>
+                                      setRoleSelections({ ...roleSelections, [emp.id]: e.target.value })
+                                    }
+                                    disabled={isBusy}
+                                    className="bg-surface border border-border rounded-lg px-2.5 py-1 text-xs text-foreground focus:outline-none focus:border-primary"
+                                  >
+                                    <option value="NURSE">Nurse (NURSE)</option>
+                                    <option value="DOCTOR_PSYCHIATRIST">Doctor / Psychiatrist (DOCTOR_PSYCHIATRIST)</option>
+                                    <option value="COUNSELLOR">Addiction Counsellor (COUNSELLOR)</option>
+                                    <option value="PHARMACIST">Pharmacist (PHARMACIST)</option>
+                                    <option value="ADMISSIONS_FRONT_DESK">Admissions & Front Desk (ADMISSIONS_FRONT_DESK)</option>
+                                    <option value="FINANCE_BILLING">Finance & Billing (FINANCE_BILLING)</option>
+                                    <option value="INVENTORY_STORE">Stores & Inventory (INVENTORY_STORE)</option>
+                                    <option value="MEDICAL_DIRECTOR">Medical Director (MEDICAL_DIRECTOR)</option>
+                                    <option value="FACILITY_ADMIN">Facility Administrator (FACILITY_ADMIN)</option>
+                                  </select>
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <div className="inline-flex items-center space-x-2">
+                                    <button
+                                      onClick={() => handleApproveEmployee(emp.id, selectedRole)}
+                                      disabled={isBusy}
+                                      className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 shadow-xs transition-all disabled:opacity-60"
+                                    >
+                                      {isBusy ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                      ) : (
+                                        <Check className="w-3.5 h-3.5" />
+                                      )}
+                                      <span>Authorize</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleRejectEmployee(emp.id)}
+                                      disabled={isBusy}
+                                      className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-surface hover:bg-danger-soft text-muted-foreground hover:text-danger border border-border hover:border-danger/30 text-xs font-semibold transition-all disabled:opacity-60"
+                                    >
+                                      <UserX className="w-3.5 h-3.5" />
+                                      <span>Decline</span>
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="bg-card p-6 rounded-2xl border border-border shadow-card space-y-4">
                 <div className="flex items-center justify-between">
                   <div>

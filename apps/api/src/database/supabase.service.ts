@@ -177,6 +177,15 @@ export class ModelRepository {
           room.beds = bedRes.rows.map(mapRow);
         }
       }
+      if (this.tableName === 'users' && args.include.staffProfile) {
+        for (const user of rows) {
+          const pRes = await this.queryFn(
+            `SELECT * FROM public."staff_profiles" WHERE user_id = $1 LIMIT 1`,
+            [user.id],
+          );
+          user.staffProfile = pRes.rows[0] ? mapRow(pRes.rows[0]) : null;
+        }
+      }
     }
 
     return rows;

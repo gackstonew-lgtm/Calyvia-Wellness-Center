@@ -26,6 +26,8 @@ export interface RequestAccessData {
   department: string;
   jobTitle: string;
   justification: string;
+  requestedRole?: string;
+  password?: string;
 }
 
 interface StoredSession {
@@ -350,9 +352,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         body: JSON.stringify(data),
       });
 
+      const body = await res.json().catch(() => ({}));
+
       if (res.ok) {
-        const body = await res.json();
         return { success: true, message: body.message };
+      } else {
+        return {
+          success: false,
+          error: Array.isArray(body.message) ? body.message.join(', ') : body.message || 'Access request was rejected by server.',
+        };
       }
     } catch {
       // Fallback for standalone/offline deployments
