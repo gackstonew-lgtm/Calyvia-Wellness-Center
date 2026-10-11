@@ -68,6 +68,7 @@ import { IncidentsView } from '../components/IncidentsView';
 import { ReferralsView } from '../components/ReferralsView';
 import { CommunicationView } from '../components/CommunicationView';
 import { AutomationView } from '../components/AutomationView';
+import { BottomNav } from '../components/BottomNav';
 
 const MODULE_TITLES: Record<string, string> = {
   dashboard: 'Management Dashboard',
@@ -654,7 +655,7 @@ export default function AdminDashboardPage() {
           onSelectModule={setActiveModule}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 space-y-6 pb-24 md:pb-8 pb-safe">
           {/* Executive Overview Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-border/60">
             <div>
@@ -2332,11 +2333,11 @@ export default function AdminDashboardPage() {
 
       {/* Modal: Register Patient */}
       {activeModal === 'register_patient' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-surface border border-border rounded-2xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-border">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="w-full max-w-md max-h-[92vh] overflow-y-auto bg-surface border border-border rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-border sticky top-0 bg-surface z-10">
               <h3 className="font-serif text-lg font-bold text-foreground">Register New Patient</h3>
-              <button onClick={() => setActiveModal(null)} className="p-1 rounded-lg text-muted-foreground hover:text-foreground">
+              <button onClick={() => setActiveModal(null)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-elevated">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -2420,11 +2421,11 @@ export default function AdminDashboardPage() {
 
       {/* Modal: Schedule Appointment */}
       {activeModal === 'book_appointment' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-surface border border-border rounded-2xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-border">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="w-full max-w-md max-h-[92vh] overflow-y-auto bg-surface border border-border rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-border sticky top-0 bg-surface z-10">
               <h3 className="font-serif text-lg font-bold text-foreground">Schedule Clinical Appointment</h3>
-              <button onClick={() => setActiveModal(null)} className="p-1 rounded-lg text-muted-foreground hover:text-foreground">
+              <button onClick={() => setActiveModal(null)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-elevated">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -2495,6 +2496,11 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
+      {/* Mobile & Tablet Persistent Bottom Navigation Bar */}
+      <BottomNav
+        currentModule={activeModule}
+        onSelectModule={setActiveModule}
+      />
     </div>
   );
 }

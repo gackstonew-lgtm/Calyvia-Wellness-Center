@@ -183,3 +183,14 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: var(--shadow-elevated);
 }
 
+/* Device safe-area utilities for mobile/tablet bottom navigation & notch support */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.bottom-safe {
+  bottom: env(safe-area-inset-bottom, 0px);
+}
+

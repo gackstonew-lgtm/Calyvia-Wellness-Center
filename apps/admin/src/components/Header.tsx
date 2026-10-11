@@ -11,35 +11,49 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onSelectModule }) => {
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState<boolean>(false);
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="h-16 bg-surface border-b border-border px-4 sm:px-6 flex items-center justify-between shadow-xs z-20 transition-colors duration-200">
+    <header className="h-16 bg-surface border-b border-border px-3 sm:px-6 flex items-center justify-between shadow-xs z-20 transition-colors duration-200">
       {/* Left: Mobile Menu Toggle & Search Bar */}
-      <div className="flex items-center space-x-3 sm:space-x-4 flex-1 max-w-xl">
+      <div className="flex items-center space-x-2 sm:space-x-4 flex-1 max-w-xl min-w-0">
         {/* Mobile Hamburger Toggle */}
         <button
           onClick={onToggleMobileMenu}
-          className="md:hidden p-2 rounded-xl border border-border text-foreground hover:bg-surface-elevated transition-colors"
-          aria-label="Open sidebar menu"
+          className="md:hidden p-2 rounded-xl border border-border text-foreground hover:bg-surface-elevated active:scale-95 transition-all flex-shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center"
+          aria-label="Open navigation menu"
         >
           <Menu className="w-5 h-5 text-foreground" />
         </button>
 
-        {/* Global Search Input with Shortcut */}
-        <div className="relative w-full max-w-md">
-          <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+        {/* Global Search Input with Shortcut (desktop & tablet, or expanded on mobile) */}
+        <div
+          className={`relative w-full max-w-md ${
+            mobileSearchOpen ? 'flex' : 'hidden sm:flex'
+          } items-center`}
+        >
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search patient, record, appointment, CAL-ID..."
-            className="w-full bg-surface-subtle border border-border rounded-xl pl-9 pr-16 py-2 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground transition-all"
+            placeholder="Search patient, CAL-ID, or record..."
+            className="w-full bg-surface-subtle border border-border rounded-xl pl-9 pr-14 py-2 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground transition-all"
           />
-          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center space-x-0.5">
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden md:flex items-center space-x-0.5">
             <kbd className="px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground bg-surface border border-border rounded shadow-xs">
               ⌘K
             </kbd>
           </div>
         </div>
+
+        {/* Small Screen Search Toggle Button */}
+        <button
+          onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+          className="sm:hidden p-2 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-surface-elevated transition-colors flex-shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center"
+          aria-label="Toggle search input"
+        >
+          <Search className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Right: Notifications & Integrated User Profile (with Theme & Settings inside) */}

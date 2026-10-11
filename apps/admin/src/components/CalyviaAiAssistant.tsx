@@ -277,7 +277,7 @@ export const CalyviaAiAssistant: React.FC = () => {
   return (
     <>
       {/* Floating Launcher Button */}
-      <div className="fixed bottom-6 right-6 z-40">
+      <div className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-30 pb-safe">
         {!isOpen && (
           <button
             onClick={() => {
@@ -297,10 +297,10 @@ export const CalyviaAiAssistant: React.FC = () => {
       {/* AI Chat Panel / Popup */}
       {isOpen && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex flex-col bg-surface border border-border rounded-3xl shadow-2xl overflow-hidden transition-all duration-200 ${
+          className={`fixed bottom-20 md:bottom-6 right-2 sm:right-6 z-50 flex flex-col bg-surface border border-border rounded-3xl shadow-2xl overflow-hidden transition-all duration-200 ${
             isMinimized
               ? 'w-72 h-14'
-              : 'w-[420px] max-w-[calc(100vw-2rem)] h-[620px] max-h-[calc(100vh-6rem)]'
+              : 'w-[420px] max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] h-[580px] max-h-[calc(100vh-7rem)] sm:max-h-[calc(100vh-6rem)]'
           }`}
         >
           {/* Header */}
