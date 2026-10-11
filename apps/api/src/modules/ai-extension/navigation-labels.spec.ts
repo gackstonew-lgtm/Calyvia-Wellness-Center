@@ -21,7 +21,7 @@ describe('Navigation Module Labels & Catalog Integrity', () => {
   });
 
   it('should have clean names with zero unwanted leading numeric prefixes across all modules', () => {
-    const numericPrefixRegex = /^\d+[\.\s\-]/;
+    const numericPrefixRegex = /^\d+[.\s-]/;
     
     toolsService.moduleCatalog.forEach((mod) => {
       expect(mod.name).not.toMatch(numericPrefixRegex);

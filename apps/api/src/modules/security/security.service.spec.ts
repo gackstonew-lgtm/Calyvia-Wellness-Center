@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SecurityService } from './security.service';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../database/prisma.service';
-import { UserRole } from '@calyvia/shared';
+import { UserRole, canAccessModule, hasPermission, Permission } from '@calyvia/shared';
 import { UnauthorizedException } from '@nestjs/common';
 
 describe('SecurityService (Authentication & Password Security)', () => {
@@ -114,8 +114,6 @@ describe('SecurityService (Authentication & Password Security)', () => {
   });
 
   describe('Institutional Role-Based Access Control (RBAC) Module Boundaries', () => {
-    // Import helper functions dynamically
-    const { canAccessModule, hasPermission, Permission } = require('@calyvia/shared');
 
     it('should strictly limit Cashier (FINANCE_BILLING) to billing/finance and block clinical & admin', () => {
       // Cashier permitted modules

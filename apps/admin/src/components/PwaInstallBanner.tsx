@@ -237,7 +237,7 @@ export const PwaInstallBanner: React.FC = () => {
           </div>
           <ol className="list-decimal list-inside space-y-1 pl-1 text-[10.5px]">
             <li className="leading-tight">
-              Tap the <span className="font-semibold text-foreground inline-flex items-center gap-0.5"><Share className="w-3 h-3 text-primary inline" /> Share</span> button in Safari's toolbar.
+              Tap the <span className="font-semibold text-foreground inline-flex items-center gap-0.5"><Share className="w-3 h-3 text-primary inline" /> Share</span> button in Safari&apos;s toolbar.
             </li>
             <li className="leading-tight">
               Scroll down and tap <span className="font-semibold text-foreground inline-flex items-center gap-0.5"><PlusSquare className="w-3 h-3 text-primary inline" /> Add to Home Screen</span>.

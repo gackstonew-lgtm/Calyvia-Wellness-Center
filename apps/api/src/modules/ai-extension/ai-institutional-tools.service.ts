@@ -63,7 +63,7 @@ export class AiInstitutionalToolsService {
   /**
    * Tool: Retrieve live executive metrics and bed census
    */
-  async getDashboardSummary(userRole: string = UserRole.SUPER_ADMIN): Promise<ToolResult> {
+  async getDashboardSummary(_userRole: string = UserRole.SUPER_ADMIN): Promise<ToolResult> {
     const metrics = await this.dashboardService.getExecutiveMetrics();
     return {
       toolName: 'get_dashboard_summary',
@@ -75,7 +75,7 @@ export class AiInstitutionalToolsService {
   /**
    * Tool: Retrieve upcoming appointments & consultations schedule
    */
-  async getAppointmentsSummary(userRole: string = UserRole.SUPER_ADMIN): Promise<ToolResult> {
+  async getAppointmentsSummary(_userRole: string = UserRole.SUPER_ADMIN): Promise<ToolResult> {
     const appointments = await this.appointmentsService.getUpcomingAppointments();
     const count = appointments.length;
     return {
@@ -88,12 +88,10 @@ export class AiInstitutionalToolsService {
   /**
    * Tool: Retrieve aggregated, privacy-preserving patient census statistics
    */
-  async getPatientStatistics(userRole: string = UserRole.SUPER_ADMIN): Promise<ToolResult> {
-    let patientCount = 28;
+  async getPatientStatistics(_userRole: string = UserRole.SUPER_ADMIN): Promise<ToolResult> {
     try {
       if (this.prisma && this.prisma.patient) {
-        const patients = await this.prisma.patient.findMany({ select: { id: true, status: true, gender: true } });
-        patientCount = patients.length || 28;
+        await this.prisma.patient.findMany({ select: { id: true, status: true, gender: true } });
       }
     } catch {
       // fallback
@@ -126,7 +124,7 @@ export class AiInstitutionalToolsService {
   /**
    * Tool: Retrieve staff on duty and clinical roster
    */
-  async getStaffWorkload(userRole: string = UserRole.SUPER_ADMIN): Promise<ToolResult> {
+  async getStaffWorkload(_userRole: string = UserRole.SUPER_ADMIN): Promise<ToolResult> {
     const staff = await this.staffService.getStaffDirectory();
     return {
       toolName: 'get_staff_workload',
@@ -186,7 +184,7 @@ export class AiInstitutionalToolsService {
   /**
    * Tool: Retrieve institutional protocols (Detox CIWA/COWS, Emergency Transfers, KDPA)
    */
-  getInstitutionalProtocols(protocolType?: string): ToolResult {
+  getInstitutionalProtocols(_protocolType?: string): ToolResult {
     const protocols = {
       alcoholDetoxCIWA: {
         title: 'CIWA-Ar Alcohol Withdrawal Protocol',
