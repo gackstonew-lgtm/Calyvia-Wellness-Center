@@ -50,19 +50,10 @@ export class DischargeService {
           return discharge;
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database service unavailable');
+    } catch (err: any) {
+      throw new Error(`Failed to process discharge: ${err.message}`);
     }
-
-    return {
-      id: 'mock-discharge-1',
-      patientId: dto.patientId,
-      medicalSummary: dto.medicalSummary,
-      signedByDoctor: dto.signedByDoctor,
-      clinicalClearance: true,
-      financialClearance: true,
-      dischargeDate: new Date().toISOString(),
-    };
   }
 
   async getDischarges() {
@@ -73,19 +64,9 @@ export class DischargeService {
           orderBy: { dischargeDate: 'desc' },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Discharge records fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-discharge-1',
-        patientName: 'Peter Kamau',
-        dischargeDate: new Date().toISOString(),
-        signedByDoctor: 'Dr. Evelyn Wanjiku',
-        clinicalClearance: true,
-        financialClearance: true,
-      },
-    ];
+    return [];
   }
 }

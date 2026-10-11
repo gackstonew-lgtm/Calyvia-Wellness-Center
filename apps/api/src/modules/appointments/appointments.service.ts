@@ -30,16 +30,11 @@ export class AppointmentsService {
           },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.error('Failed to create appointment:', err);
+      throw err;
     }
-
-    return {
-      id: 'mock-appt-1',
-      ...dto,
-      isReminderSent: false,
-      status: 'SCHEDULED',
-    };
+    throw new Error('Database connection unavailable');
   }
 
   async getUpcomingAppointments() {
@@ -49,21 +44,9 @@ export class AppointmentsService {
           orderBy: { startTime: 'asc' },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Appointments fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-appt-1',
-        title: 'Weekly Multidisciplinary Team Review (MDT)',
-        staffMemberName: 'Dr. Evelyn Wanjiku',
-        appointmentType: 'PSYCHIATRIC_REVIEW',
-        startTime: new Date().toISOString(),
-        endTime: new Date(Date.now() + 3600000).toISOString(),
-        location: 'Consultation Suite A',
-        status: 'SCHEDULED',
-      },
-    ];
+    return [];
   }
 }

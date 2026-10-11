@@ -1,10 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Bell, Shield, Sun, Moon, Menu, Settings } from 'lucide-react';
+import { Search, Bell, Sun, Moon, Menu, Settings } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
-import { useAuth } from './AuthContext';
-import { ROLE_DISPLAY_NAMES } from '@calyvia/shared';
 
 interface HeaderProps {
   onToggleMobileMenu?: () => void;
@@ -14,19 +12,6 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onSelectModule }) => {
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
-
-  const displayName = user?.fullName || 'Dr. Baraka';
-  const roleTitle = user?.role ? (ROLE_DISPLAY_NAMES[user.role] || user.role) : 'Medical Director';
-  const initials = user?.fullName
-    ? user.fullName
-        .split(' ')
-        .map((n) => n[0])
-        .filter(Boolean)
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
-    : 'DB';
 
   return (
     <header className="h-16 bg-surface border-b border-border px-4 sm:px-6 flex items-center justify-between shadow-xs z-20 transition-colors duration-200">
@@ -75,85 +60,40 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onSelectModu
           {showNotifications && (
             <div className="absolute right-0 mt-2 w-80 bg-surface border border-border rounded-2xl shadow-elevated p-3 z-50 animate-in fade-in-50 zoom-in-95 duration-150">
               <div className="flex items-center justify-between pb-2 border-b border-border">
-                <span className="font-semibold text-xs text-foreground">Clinical Alerts (3)</span>
-                <span className="text-[10px] text-primary font-medium cursor-pointer hover:underline">
-                  Mark all read
-                </span>
+                <span className="font-semibold text-xs text-foreground">Clinical Alerts</span>
+                <span className="text-[10px] text-muted-foreground font-mono">0 active</span>
               </div>
-              <div className="divide-y divide-border text-xs mt-1">
-                <div className="py-2 space-y-0.5">
-                  <div className="font-medium text-danger flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-danger" />
-                    <span>CIWA Vitals Re-check Due</span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">John Kamau (Bed 02) requires 14:00 CIWA-Ar scoring.</p>
-                </div>
-                <div className="py-2 space-y-0.5">
-                  <div className="font-medium text-warning flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-warning" />
-                    <span>Pharmacy Re-order Level</span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">Diazepam 10mg inventory has dropped to 14 ampoules.</p>
-                </div>
-                <div className="py-2 space-y-0.5">
-                  <div className="font-medium text-info flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-info" />
-                    <span>New Admission Enquiry</span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">Admissions team received intake referral from Nairobi West.</p>
-                </div>
+              <div className="py-6 text-center text-xs space-y-1">
+                <p className="font-medium text-foreground">No Active Clinical Alerts</p>
+                <p className="text-[11px] text-muted-foreground">All patient vitals and facility alerts are normal.</p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Authenticated Staff Pill with Theme and Settings inserted inside */}
-        <div className="flex items-center space-x-2.5 bg-surface border border-border rounded-2xl p-1.5 pl-2 sm:pl-2.5 shadow-xs transition-colors">
-          {/* Avatar & Staff Identity */}
-          <div className="flex items-center space-x-2 sm:space-x-2.5 pr-1 sm:pr-2">
-            <div className="relative w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shadow-xs flex-shrink-0">
-              <span>{initials}</span>
-              <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border-2 border-surface" />
-            </div>
-            <div className="hidden sm:block text-left max-w-[140px]">
-              <div className="font-semibold text-foreground leading-tight flex items-center space-x-1 truncate">
-                <span className="truncate">{displayName}</span>
-                <Shield className="w-3 h-3 text-secondary flex-shrink-0" />
-              </div>
-              <div className="text-[10px] text-muted-foreground truncate">{roleTitle}</div>
-            </div>
-          </div>
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          className="w-9 h-9 rounded-xl bg-surface hover:bg-surface-elevated border border-border text-foreground flex items-center justify-center hover:border-primary/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-xs"
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-4 h-4 text-amber-400" />
+          ) : (
+            <Moon className="w-4 h-4 text-primary" />
+          )}
+        </button>
 
-          {/* Vertical subtle divider */}
-          <div className="h-6 w-px bg-border flex-shrink-0" />
-
-          {/* Inserted Theme Change Button & Settings Button */}
-          <div className="flex items-center space-x-1">
-            {/* Theme Toggle Button */}
-            <button
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-elevated border border-border text-foreground flex items-center justify-center hover:border-primary/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-2xs"
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-3.5 h-3.5 text-amber-400" />
-              ) : (
-                <Moon className="w-3.5 h-3.5 text-primary" />
-              )}
-            </button>
-
-            {/* Settings Button */}
-            <button
-              onClick={() => onSelectModule && onSelectModule('system_admin')}
-              title="System Settings"
-              aria-label="System Settings"
-              className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-elevated border border-border text-muted-foreground hover:text-foreground flex items-center justify-center hover:border-primary/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-2xs"
-            >
-              <Settings className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
+        {/* Settings Button */}
+        <button
+          onClick={() => onSelectModule && onSelectModule('system_admin')}
+          title="System Settings"
+          aria-label="System Settings"
+          className="w-9 h-9 rounded-xl bg-surface hover:bg-surface-elevated border border-border text-muted-foreground hover:text-foreground flex items-center justify-center hover:border-primary/50 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 shadow-xs"
+        >
+          <Settings className="w-4 h-4" />
+        </button>
       </div>
     </header>
   );

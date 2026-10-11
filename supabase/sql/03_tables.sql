@@ -4,6 +4,8 @@
 -- Production PostgreSQL 16 DDL for All 41 Relational Domain Tables
 -- ==============================================================================
 
+SET search_path = public, extensions;
+
 -- 1. users
 CREATE TABLE IF NOT EXISTS public.users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -13,11 +15,25 @@ CREATE TABLE IF NOT EXISTS public.users (
     full_name TEXT NOT NULL,
     phone TEXT,
     is_active BOOLEAN NOT NULL DEFAULT true,
+    must_change_password BOOLEAN NOT NULL DEFAULT false,
+    approval_status TEXT NOT NULL DEFAULT 'APPROVED',
+    approved_by UUID REFERENCES public.users(id),
+    approved_at TIMESTAMPTZ,
+    rejection_reason TEXT,
+    requested_role TEXT,
     two_factor_secret TEXT,
     last_login_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Idempotent column reconciliations for pre-existing installations
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS approval_status TEXT NOT NULL DEFAULT 'APPROVED';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS approved_by UUID REFERENCES public.users(id);
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS requested_role TEXT;
 
 -- 2. staff_profiles
 CREATE TABLE IF NOT EXISTS public.staff_profiles (
@@ -592,3 +608,73 @@ CREATE TABLE IF NOT EXISTS public.system_settings (
     is_encrypted BOOLEAN NOT NULL DEFAULT false,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- ==============================================================================
+-- Idempotent Column Reconciliations for Full Application Domain Compatibility
+-- ==============================================================================
+ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS preferred_name TEXT;
+ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS blood_group TEXT;
+ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS residential_address TEXT;
+
+ALTER TABLE public.counselling_sessions ALTER COLUMN admission_id DROP NOT NULL;
+ALTER TABLE public.counselling_sessions ADD COLUMN IF NOT EXISTS patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE;
+ALTER TABLE public.counselling_sessions ADD COLUMN IF NOT EXISTS counsellor_name TEXT;
+ALTER TABLE public.counselling_sessions ADD COLUMN IF NOT EXISTS duration_mins INT DEFAULT 60;
+ALTER TABLE public.counselling_sessions ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ;
+ALTER TABLE public.counselling_sessions ADD COLUMN IF NOT EXISTS session_notes_enc TEXT;
+ALTER TABLE public.counselling_sessions ADD COLUMN IF NOT EXISTS is_attended BOOLEAN DEFAULT true;
+
+ALTER TABLE public.appointments ALTER COLUMN staff_id DROP NOT NULL;
+ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS title TEXT;
+ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS staff_member_name TEXT;
+
+ALTER TABLE public.invoices ALTER COLUMN admission_id DROP NOT NULL;
+ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE;
+ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS paid_amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00;
+
+ALTER TABLE public.payments ADD COLUMN IF NOT EXISTS received_by TEXT;
+ALTER TABLE public.payments ADD COLUMN IF NOT EXISTS transaction_ref TEXT;
+
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS enquiry_number TEXT;
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS channel TEXT DEFAULT 'DIRECT_WEBSITE';
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS substances_used TEXT;
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS urgency_level TEXT DEFAULT 'ROUTINE';
+ALTER TABLE public.leads ALTER COLUMN primary_concern DROP NOT NULL;
+
+ALTER TABLE public.clinical_notes ALTER COLUMN admission_id DROP NOT NULL;
+ALTER TABLE public.clinical_notes ADD COLUMN IF NOT EXISTS patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE;
+ALTER TABLE public.clinical_notes ADD COLUMN IF NOT EXISTS icd10_diagnosis TEXT;
+ALTER TABLE public.clinical_notes ADD COLUMN IF NOT EXISTS is_locked BOOLEAN DEFAULT true;
+ALTER TABLE public.clinical_notes ADD COLUMN IF NOT EXISTS version INT DEFAULT 1;
+
+ALTER TABLE public.detox_episodes ALTER COLUMN admission_id DROP NOT NULL;
+ALTER TABLE public.detox_episodes ADD COLUMN IF NOT EXISTS patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE;
+ALTER TABLE public.detox_episodes ADD COLUMN IF NOT EXISTS medical_officer TEXT;
+ALTER TABLE public.detox_episodes ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT false;
+
+ALTER TABLE public.withdrawal_assessments ALTER COLUMN assessor_id DROP NOT NULL;
+ALTER TABLE public.withdrawal_assessments ADD COLUMN IF NOT EXISTS evaluated_by TEXT;
+
+ALTER TABLE public.vitals_logs ALTER COLUMN admission_id DROP NOT NULL;
+ALTER TABLE public.vitals_logs ALTER COLUMN recorded_by_id DROP NOT NULL;
+ALTER TABLE public.vitals_logs ADD COLUMN IF NOT EXISTS detox_episode_id UUID REFERENCES public.detox_episodes(id) ON DELETE CASCADE;
+ALTER TABLE public.vitals_logs ADD COLUMN IF NOT EXISTS patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE;
+ALTER TABLE public.vitals_logs ADD COLUMN IF NOT EXISTS recorded_by TEXT;
+
+ALTER TABLE public.incident_reports ALTER COLUMN reported_by_id DROP NOT NULL;
+ALTER TABLE public.incident_reports ALTER COLUMN incident_date SET DEFAULT now();
+ALTER TABLE public.incident_reports ALTER COLUMN location SET DEFAULT 'Calyvia Center, Ruiru';
+ALTER TABLE public.incident_reports ADD COLUMN IF NOT EXISTS reported_by TEXT;
+ALTER TABLE public.incident_reports ADD COLUMN IF NOT EXISTS patient_id UUID REFERENCES public.patients(id) ON DELETE SET NULL;
+
+ALTER TABLE public.movement_records ALTER COLUMN admission_id DROP NOT NULL;
+ALTER TABLE public.movement_records ALTER COLUMN destination SET DEFAULT 'Medical / Therapeutic Leave';
+ALTER TABLE public.movement_records ADD COLUMN IF NOT EXISTS patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE;
+ALTER TABLE public.movement_records ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'ON_LEAVE';
+
+ALTER TABLE public.visitor_logs ALTER COLUMN patient_id DROP NOT NULL;
+ALTER TABLE public.visitor_logs ALTER COLUMN time_in SET DEFAULT now();
+ALTER TABLE public.visitor_logs ADD COLUMN IF NOT EXISTS patient_name TEXT;
+ALTER TABLE public.visitor_logs ADD COLUMN IF NOT EXISTS officer_name TEXT;
+ALTER TABLE public.visitor_logs ADD COLUMN IF NOT EXISTS belongings_checked BOOLEAN DEFAULT true;
+

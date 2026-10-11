@@ -26,15 +26,10 @@ export class AftercareService {
           },
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database service unavailable');
+    } catch (err: any) {
+      throw new Error(`Failed to record checkin: ${err.message}`);
     }
-
-    return {
-      id: 'mock-checkin-1',
-      ...dto,
-      conductedAt: new Date().toISOString(),
-    };
   }
 
   async getActivePlans() {
@@ -45,26 +40,9 @@ export class AftercareService {
           orderBy: { planStartDate: 'desc' },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Aftercare plans fetch error:', err);
     }
-
-    return [
-      {
-        id: 'plan-1',
-        patientName: 'Peter Kamau',
-        planStartDate: new Date().toISOString(),
-        relapseRiskLevel: 'MODERATE',
-        counsellorInCharge: 'Counsellor Samuel Kioko',
-        checkins: [
-          {
-            cadenceDay: 7,
-            contactMethod: 'PHONE_CALL',
-            sobrietyStatus: 'SOBER',
-            notes: 'Patient attending weekly fellowship, supportive family environment.',
-          },
-        ],
-      },
-    ];
+    return [];
   }
 }

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -11,44 +11,44 @@
    ============================================================================== */
 
 :root {
-  /* Surface & Base Canvas */
-  --background: #F8F9FA;
-  --foreground: #1A2621;
+  /* Surface & Base Canvas (Warm linen / sand 50 from calyviawellness.co.ke) */
+  --background: #FDFBF7;
+  --foreground: #2C4A3E;
   --surface: #FFFFFF;
-  --surface-subtle: #F1F4F2;
-  --surface-elevated: #E8ECE9;
+  --surface-subtle: #F4F6F4;
+  --surface-elevated: #F5EFE6;
 
   /* Cards & Modals */
   --card: #FFFFFF;
-  --card-foreground: #1A2621;
-  --card-inner: #F8F9FA;
+  --card-foreground: #2C4A3E;
+  --card-inner: #FDFBF7;
 
-  /* Calyvia Brand Primary (Rich Forest Green) */
-  --primary: #1F4E28;
+  /* Calyvia Brand Primary (Rich Deep Forest Green - #2C4A3E from calyviawellness.co.ke) */
+  --primary: #2C4A3E;
   --primary-foreground: #FFFFFF;
-  --primary-hover: #163B1E;
+  --primary-hover: #1E352B;
   --primary-soft: #E8F2EA;
 
-  /* Calyvia Brand Secondary (Sage Green) */
-  --secondary: #6A9777;
+  /* Calyvia Brand Secondary (Muted Sage Green - #7BA888 from calyviawellness.co.ke) */
+  --secondary: #7BA888;
   --secondary-foreground: #FFFFFF;
   --secondary-soft: #EFF5F1;
 
-  /* Calyvia Accent (Warm Terracotta / Gold) */
+  /* Calyvia Accent (Warm Terracotta - #C17B5F from calyviawellness.co.ke) */
   --accent: #C17B5F;
   --accent-foreground: #FFFFFF;
   --accent-soft: #FFF2EB;
 
-  /* Borders & Dividers */
-  --border: #DDE4DF;
-  --border-subtle: #EBEFEA;
-  --border-strong: #C4D1C7;
+  /* Borders & Dividers (Warm Sand and Sage borders) */
+  --border: #E8DCC8;
+  --border-subtle: #F0EDE6;
+  --border-strong: #D5DDD7;
   --input: #FFFFFF;
-  --ring: rgba(31, 78, 40, 0.25);
+  --ring: rgba(44, 74, 62, 0.25);
 
   /* Muted Text & Backgrounds */
   --muted: #EFF2EE;
-  --muted-foreground: #5B6B60;
+  --muted-foreground: #6B5D56;
 
   /* Status Colors (Accessible Contrast) */
   --success: #15803D;
@@ -63,81 +63,83 @@
   --info: #0369A1;
   --info-soft: #E0F2FE;
 
-  /* Elevation Shadows */
-  --shadow-card: 0 1px 3px 0 rgba(26, 38, 33, 0.06), 0 1px 2px -1px rgba(26, 38, 33, 0.06);
-  --shadow-elevated: 0 4px 6px -1px rgba(26, 38, 33, 0.08), 0 2px 4px -2px rgba(26, 38, 33, 0.06);
+  /* Elevation Shadows (Soft organic forest-tinted shadows from calyviawellness.co.ke) */
+  --shadow-card: 0 2px 10px -2px rgba(44, 74, 62, 0.05), 0 1px 3px rgba(44, 74, 62, 0.04);
+  --shadow-elevated: 0 8px 24px -4px rgba(44, 74, 62, 0.08), 0 2px 6px rgba(44, 74, 62, 0.04);
 }
 
 .dark {
-  /* Surface & Base Canvas (Deep charcoal-slate with cool forest undertones) */
-  --background: #0D1411;
-  --foreground: #ECF2ED;
-  --surface: #141E1A;
-  --surface-subtle: #101915;
-  --surface-elevated: #1B2923;
+  /* Surface & Base Canvas (Refined QC NetCore Near-Black & Charcoal Interface) */
+  --background: #080A0A;
+  --foreground: #F2F4F3;
+  --surface: #0B0D0D;
+  --surface-subtle: #121618;
+  --surface-elevated: #15191C;
 
   /* Cards & Modals */
-  --card: #141E1A;
-  --card-foreground: #ECF2ED;
-  --card-inner: #192620;
+  --card: #15191C;
+  --card-foreground: #F2F4F3;
+  --card-inner: #1B2024;
 
-  /* Calyvia Brand Primary (Luminous Emerald-Sage for dark surfaces) */
-  --primary: #48A368;
-  --primary-foreground: #09130D;
-  --primary-hover: #5BB97B;
-  --primary-soft: #132A1E;
+  /* Calyvia Brand Primary (Retaining Calyvia's vivid emerald green accent) */
+  --primary: #00E676;
+  --primary-foreground: #001A0B;
+  --primary-hover: #00F58A;
+  --primary-soft: rgba(0, 230, 118, 0.1);
 
-  /* Calyvia Brand Secondary */
-  --secondary: #7BA888;
-  --secondary-foreground: #09130D;
-  --secondary-soft: #1B3125;
+  /* Calyvia Brand Secondary (Refined emerald-sage) */
+  --secondary: #00C853;
+  --secondary-foreground: #001A0B;
+  --secondary-soft: rgba(0, 200, 83, 0.1);
 
-  /* Calyvia Accent */
+  /* Calyvia Accent (Warm Amber / Gold for high-priority clinical alerts) */
   --accent: #E08C6E;
   --accent-foreground: #1A0D08;
-  --accent-soft: #301B14;
+  --accent-soft: rgba(224, 140, 110, 0.15);
 
-  /* Borders & Dividers */
-  --border: #23332A;
-  --border-subtle: #1A2620;
-  --border-strong: #2F4539;
-  --input: #141E1A;
-  --ring: rgba(72, 163, 104, 0.35);
+  /* Borders & Dividers (Subtle charcoal border matching #293137) */
+  --border: #293137;
+  --border-subtle: #1F252A;
+  --border-strong: #38424A;
+  --input: #1B2024;
+  --ring: #00E676;
 
   /* Muted Text & Backgrounds */
-  --muted: #1B2923;
-  --muted-foreground: #94A69A;
+  --muted: #1B2024;
+  --muted-foreground: #AAB4B2;
 
-  /* Status Colors */
-  --success: #34D399;
-  --success-foreground: #062013;
-  --success-soft: #0E291C;
-  --warning: #FBBF24;
-  --warning-foreground: #241A04;
-  --warning-soft: #2D2309;
-  --danger: #F87171;
-  --danger-foreground: #220808;
-  --danger-soft: #2E1313;
+  /* Status Colors (Accessible Contrast) */
+  --success: #00E676;
+  --success-foreground: #001A0B;
+  --success-soft: rgba(0, 230, 118, 0.12);
+  --warning: #F59E0B;
+  --warning-foreground: #1F1300;
+  --warning-soft: rgba(245, 158, 11, 0.14);
+  --danger: #EF4444;
+  --danger-foreground: #220505;
+  --danger-soft: rgba(239, 68, 68, 0.14);
   --info: #38BDF8;
-  --info-soft: #0C2433;
+  --info-soft: rgba(56, 189, 248, 0.12);
 
-  /* Elevation Shadows */
-  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
-  --shadow-elevated: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  /* Elevation Shadows (Restrained charcoal depth without harsh glows) */
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px -1px rgba(0, 0, 0, 0.5);
+  --shadow-elevated: 0 6px 16px -2px rgba(0, 0, 0, 0.65), 0 2px 6px -1px rgba(0, 0, 0, 0.4);
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Crimson Pro', Georgia, serif;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.015em;
 }
 
 /* Custom scrollbars */
@@ -155,3 +157,29 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted-foreground);
 }
+
+/* Micro-animations and transitions matching calyviawellness.co.ke */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Card subtle lift on hover (matching live site hover:-translate-y-0.5 and organic shadow) */
+.card-hover-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+.card-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-elevated);
+}
+

@@ -100,19 +100,19 @@ module.exports = {
           50: '#FDFBF7',
         },
         calyvia: {
-          primary: '#1F4E28',
+          primary: '#2C4A3E',
           secondary: '#7BA888',
           accent: '#C17B5F',
           dark: '#1A2621',
-          muted: '#5B6B60',
-          canvas: '#F8F9FA',
+          muted: '#6B5D56',
+          canvas: '#FDFBF7',
           card: '#FFFFFF',
-          border: '#DDE4DF',
+          border: '#E8DCC8',
         }
       },
       fontFamily: {
-        serif: ['"Crimson Pro"', 'Georgia', 'serif'],
-        sans: ['"Outfit"', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['"Poppins"', 'system-ui', '-apple-system', 'sans-serif'],
+        serif: ['"Poppins"', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
       borderRadius: {
@@ -125,7 +125,16 @@ module.exports = {
       boxShadow: {
         card: 'var(--shadow-card)',
         elevated: 'var(--shadow-elevated)',
-      }
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(6px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
     },
   },
   plugins: [],

@@ -102,16 +102,13 @@ export class AiExtensionService {
         `**Reporting Period:** Today, ${new Date().toLocaleDateString('en-KE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n\n` +
         `#### 🛏️ Bed Census & Ward Occupancy\n` +
         `* **Total Occupancy:** **${metrics.census.occupiedBeds} / ${metrics.census.totalBeds} Beds** (${metrics.census.occupancyRatePercentage}%)\n` +
-        `* **Available Beds:** **4 Beds** (2 Male Inpatient, 2 Female Inpatient)\n` +
-        `* **Active Medical Detox:** **${metrics.census.detoxWardOccupancy} Patients** on high-acuity withdrawal monitoring (100% capacity)\n` +
-        `* **Rehabilitation Wards:** Horizon Wing (Male: 14/16), Serenity Wing (Female: 6/8), VIP Suites (2/2)\n\n` +
+        `* **Available Beds:** **${metrics.census.availableBeds} Beds**\n` +
+        `* **Active Medical Detox:** **${metrics.census.detoxWardOccupancy} Patients** on high-acuity withdrawal monitoring\n\n` +
         `#### 🩺 Clinical & Patient Flow Activity\n` +
-        `* **Therapy & Consultations Today:** **${metrics.clinical.therapySessionsToday} Scheduled** (8 Completed, 6 Pending Afternoon/Evening)\n` +
-        `* **Vitals Alerts:** **${metrics.clinical.criticalVitalsAlerts} Patient** due for CIWA-Ar re-check in Detox Ward Bed 02 (John Kamau)\n` +
-        `* **Staff on Duty:** **${metrics.qualityAndSafety.staffOnDuty} Staff Members** actively clocked in (Medical, Nursing, Therapy, Operations)\n\n` +
-        `#### 💡 Management Recommendations\n` +
-        `1. **Detox Acuity:** Detox ward is at 100% capacity (6/6). Prioritize the 14:00 CIWA assessment for John Kamau to evaluate stabilization for step-down transition to Horizon Wing.\n` +
-        `2. **Intake Flow:** 5 CRM intake leads are currently in triage. 4 beds are available for voluntary admission this week.`;
+        `* **Therapy & Consultations Today:** **${metrics.clinical.therapySessionsToday} Scheduled** (${metrics.clinical.completedSessions} Completed, ${metrics.clinical.pendingSessions} Pending)\n` +
+        `* **Staff on Record:** **${metrics.qualityAndSafety.staffOnDuty} Staff Members**\n\n` +
+        `#### 💡 Current Operational Status\n` +
+        `* Connected to live Supabase PostgreSQL database. Empty tables display zero counts.`;
 
       suggestedFollowUps = [
         'What appointments are scheduled today?',
@@ -128,18 +125,21 @@ export class AiExtensionService {
     ) {
       toolsExecuted.push('get_appointments_summary');
       referencedModules.push('appointments', 'clinical', 'counselling');
-      await this.toolsService.getAppointmentsSummary(userRole);
+      const apptResult = await this.toolsService.getAppointmentsSummary(userRole);
+      const appts = apptResult.data;
 
-      reply = `### 📅 Today's Clinical & Consultation Schedule\n\n` +
-        `Here is the active schedule for today across Calyvia clinical and counselling suites:\n\n` +
-        `| Time | Patient / Subject | Clinician | Type | Status |\n` +
-        `| :--- | :--- | :--- | :--- | :--- |\n` +
-        `| **08:30 AM** | Morning MDT Shift Handover | Dr. Baraka, Nurse Wangari | Nursing & Detox Handover | ✅ Completed |\n` +
-        `| **09:00 AM** | John Kamau (CAL-2026-0001) | Dr. Baraka | Detox CIWA Review | ✅ Confirmed |\n` +
-        `| **11:30 AM** | Brian Otieno (CAL-2026-0041) | Counsellor David | CBT Individual Therapy | ⏳ In Progress |\n` +
-        `| **02:00 PM** | Faith Wanjiku (CAL-2026-0052) | Dr. Mwangi | Sedative Taper Review | 🕒 Waiting |\n` +
-        `| **04:30 PM** | Kamau Family Support | Dr. Nduta & Counsellor David | Family Reintegration | 🕒 Scheduled |\n\n` +
-        `**Summary:** 14 sessions are active today (8 completed, 6 remaining). No cancellations or scheduling conflicts detected.`;
+      if (!appts || appts.length === 0) {
+        reply = `### 📅 Today's Clinical & Consultation Schedule\n\n` +
+          `No clinical appointments or therapy sessions are scheduled for today.\n\n` +
+          `You can schedule new patient appointments directly in **Module 06: Appointments & Calendar**.`;
+      } else {
+        reply = `### 📅 Today's Clinical & Consultation Schedule\n\n` +
+          `Here is the active schedule for today across Calyvia clinical and counselling suites:\n\n` +
+          `| Time | Patient / Subject | Clinician | Type | Status |\n` +
+          `| :--- | :--- | :--- | :--- | :--- |\n` +
+          appts.map((a: any) => `| **${a.time || (a.startTime ? new Date(a.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—')}** | ${a.title} | ${a.staffMemberName || a.doctor || 'Clinician'} | ${a.appointmentType || 'Consultation'} | ${a.status || 'SCHEDULED'} |`).join('\n') +
+          `\n\n**Summary:** ${appts.length} session${appts.length === 1 ? '' : 's'} recorded.`;
+      }
 
       suggestedFollowUps = [
         'How do I schedule a new appointment in Module 06?',
@@ -162,14 +162,9 @@ export class AiExtensionService {
 
       reply = `### 🛏️ Calyvia Inpatient Ward & Bed Census\n\n` +
         `**Current Facility Occupancy:** **${data.totalActiveInpatients} / ${data.totalCapacity} Beds (${data.occupancyRate})**\n\n` +
-        `#### Ward Breakdown:\n` +
-        `* **Detox Ward (High Acuity):** **6 / 6 Beds** (${data.wardBreakdown.detoxWard.status})\n` +
-        `  * Alcohol CIWA-Ar protocol: 4 patients\n` +
-        `  * Prescription sedative taper: 2 patients\n` +
-        `* **Horizon Wing (Male Rehab):** **14 / 16 Beds** (${data.wardBreakdown.horizonWingMale.status})\n` +
-        `* **Serenity Wing (Female Rehab):** **6 / 8 Beds** (${data.wardBreakdown.serenityWingFemale.status})\n` +
-        `* **VIP Executive Suite:** **2 / 2 Beds** (${data.wardBreakdown.vipSuite.status})\n\n` +
-        `**Operational Note:** 4 beds remain open for immediate admissions (2 Male Inpatient, 2 Female Inpatient). The admissions pipeline in **Module 02 (CRM)** has 5 assessments ready to be scheduled.`;
+        `* **Detox Ward Occupancy:** ${data.wardBreakdown.detoxWard.occupied} / ${data.wardBreakdown.detoxWard.capacity} Beds\n` +
+        `* **Available Beds:** ${Math.max(0, data.totalCapacity - data.totalActiveInpatients)} Beds available for admission\n\n` +
+        `**Operational Note:** Real-time ward census dynamically queried from Supabase room and bed allocations.`;
 
       suggestedFollowUps = [
         'How do I allocate a bed in Module 09?',
@@ -199,8 +194,7 @@ export class AiExtensionService {
           `* **Month-to-Date Revenue Collected:** **KES ${b.mtdRevenueCollectedKES.toLocaleString()}**\n` +
           `* **Outstanding Receivables:** **KES ${b.outstandingBalancesKES.toLocaleString()}**\n` +
           `* **Daraja M-Pesa Volume Share:** **${b.darajaMpesaShare}**\n` +
-          `* **Bank Transfer Volume Share:** **${b.bankTransferShare}**\n` +
-          `* **Active Invoices:** 42 issued this cycle (average stay invoice: KES 180,000)\n\n` +
+          `* **Bank Transfer Volume Share:** **${b.bankTransferShare}**\n\n` +
           `#### 📱 Daraja M-Pesa Integration Status\n` +
           `* STK Push Gateway: **Active & Responding**\n` +
           `* Paybill / Till handshakes: Operational under Safaricom sandbox/production API.\n` +

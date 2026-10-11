@@ -21,17 +21,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [mounted, setMounted] = useState<boolean>(false);
 
   useEffect(() => {
-    // Check saved localStorage theme or prefers-color-scheme
+    // Check saved localStorage theme (defaults to light unless explicitly set to dark)
     try {
       const saved = localStorage.getItem('calyvia_theme') as Theme | null;
-      if (saved === 'dark' || saved === 'light') {
-        setThemeState(saved);
-        applyTheme(saved);
+      if (saved === 'dark') {
+        setThemeState('dark');
+        applyTheme('dark');
       } else {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const initial = prefersDark ? 'dark' : 'light';
-        setThemeState(initial);
-        applyTheme(initial);
+        setThemeState('light');
+        applyTheme('light');
       }
     } catch {
       // fallback

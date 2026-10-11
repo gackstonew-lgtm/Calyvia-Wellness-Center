@@ -2,12 +2,20 @@
  * ==============================================================================
  * Calyvia Wellness Center — Secure Administrator Provisioning Utility
  * ==============================================================================
- * Provisions or updates an authorized System Administrator account in the hosted
- * Supabase database with Argon2id password hashing and staff profile association.
+ * Provisions or reconciles the authoritative Primary System Administrator account
+ * in the hosted Supabase PostgreSQL database and Supabase Auth admin API.
+ * Uses Argon2id password hashing, enforces least-privilege, associates staff profiles,
+ * and maintains full audit logging without destroying existing credentials.
  *
  * Usage:
- *   npx ts-node src/database/provision-admin.ts --email=admin@calyviawellness.co.ke --password="YourSecurePassword#2026" --name="Dr. Antony Baraka"
- * Or configure BOOTSTRAP_ADMIN_EMAIL and BOOTSTRAP_ADMIN_PASSWORD in .env
+ *   npm run provision:admin -- --email="admin@calyviawellness.co.ke" --password="admin123" --name="Dr. Antony Baraka"
+ * Options:
+ *   --email                    Administrator email (default: admin@calyviawellness.co.ke)
+ *   --password                 Initial administrator password (min 8 chars)
+ *   --name                     Full name and professional title
+ *   --phone                    Contact phone number (default: +254700534306)
+ *   --reset-password           Explicitly rotate/reset password if user already exists
+ *   --require-password-change  Force user to change password upon next login (default: true)
  * ==============================================================================
  */
 
@@ -15,9 +23,11 @@ import { Pool } from 'pg';
 import * as argon2 from 'argon2';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { createClient } from '@supabase/supabase-js';
 
-// Load environment configuration
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+// Load environment configuration from root and local workspaces
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 function parseArg(key: string): string | null {
@@ -28,19 +38,41 @@ function parseArg(key: string): string | null {
   return null;
 }
 
-async function run() {
-  console.log('[Calyvia Provisioning] Initiating administrator provisioning...');
+function hasFlag(flag: string): boolean {
+  return process.argv.includes(`--${flag}`);
+}
 
-  const email = parseArg('email') || process.env.BOOTSTRAP_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
-  const password = parseArg('password') || process.env.BOOTSTRAP_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD;
-  const fullName = parseArg('name') || process.env.ADMIN_NAME || 'Dr. Antony Baraka (Medical Director & Administrator)';
+async function run() {
+  console.log('[Calyvia Provisioning] Initiating Primary Administrator Provisioning Workflow...');
+
+  const email = (
+    parseArg('email') ||
+    process.env.BOOTSTRAP_ADMIN_EMAIL ||
+    process.env.ADMIN_EMAIL ||
+    'admin@calyviawellness.co.ke'
+  ).toLowerCase().trim();
+
+  const password =
+    parseArg('password') ||
+    parseArg('temp-password') ||
+    process.env.BOOTSTRAP_ADMIN_PASSWORD ||
+    process.env.ADMIN_PASSWORD ||
+    'admin123';
+
+  const fullName =
+    parseArg('name') ||
+    process.env.ADMIN_NAME ||
+    'Dr. Antony Baraka (Medical Director & Administrator)';
+
   const phone = parseArg('phone') || process.env.ADMIN_PHONE || '+254700534306';
+  const shouldResetPassword = hasFlag('reset-password');
+  const requirePasswordChange = !hasFlag('no-password-change');
 
   if (!email || !password) {
     console.error(`
 [ERROR] Missing administrator credentials.
 Please provide parameters or set environment variables:
-  npx ts-node src/database/provision-admin.ts --email="admin@calyviawellness.co.ke" --password="ClinicalSecure#2026" --name="Dr. Antony Baraka"
+  npm run provision:admin -- --email="admin@calyviawellness.co.ke" --password="admin123"
     `);
     process.exit(1);
   }
@@ -67,7 +99,7 @@ Please provide parameters or set environment variables:
   });
 
   try {
-    console.log(`[Calyvia Provisioning] Generating Argon2id hash for ${email}...`);
+    console.log(`[Calyvia Provisioning] Hashing password with Argon2id for identifier: ${email}...`);
     const passwordHash = await argon2.hash(password, {
       type: argon2.argon2id,
       memoryCost: 65536,
@@ -80,54 +112,168 @@ Please provide parameters or set environment variables:
 
     try {
       await client.query('BEGIN');
+      await client.query('SET search_path = public, extensions');
+
+      // Ensure must_change_password column exists
+      await client.query(`
+        ALTER TABLE public.users 
+        ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false
+      `);
 
       // Check if user already exists
-      const checkRes = await client.query('SELECT id, role FROM public.users WHERE email = $1', [email.toLowerCase()]);
+      const checkRes = await client.query(
+        'SELECT id, role, password_hash, is_active FROM public.users WHERE email = $1',
+        [email],
+      );
 
       let userId: string;
+      let isNewUser = false;
+
       if (checkRes.rows.length > 0) {
         userId = checkRes.rows[0].id;
-        console.log(`[Calyvia Provisioning] Updating existing user (${userId}) to SUPER_ADMIN...`);
-        await client.query(
-          `UPDATE public.users 
-           SET password_hash = $1, role = 'SUPER_ADMIN', full_name = $2, phone = $3, is_active = true, updated_at = now()
-           WHERE id = $4`,
-          [passwordHash, fullName, phone, userId],
-        );
+        const existingRole = checkRes.rows[0].role;
+
+        if (shouldResetPassword) {
+          console.log(`[Calyvia Provisioning] Explicit password reset requested for existing administrator (${userId})...`);
+          await client.query(
+            `UPDATE public.users 
+             SET password_hash = $1, role = 'SUPER_ADMIN', full_name = $2, phone = $3, 
+                 is_active = true, must_change_password = $4, updated_at = now()
+             WHERE id = $5`,
+            [passwordHash, fullName, phone, requirePasswordChange, userId],
+          );
+          console.log(`[Calyvia Provisioning] Password updated. Must change password flag: ${requirePasswordChange}`);
+        } else {
+          console.log(`[Calyvia Provisioning] Administrator (${userId}) already exists. Retaining current password hash.`);
+          await client.query(
+            `UPDATE public.users 
+             SET role = 'SUPER_ADMIN', full_name = $1, phone = $2, is_active = true, updated_at = now()
+             WHERE id = $3`,
+            [fullName, phone, userId],
+          );
+          console.log(`[Calyvia Provisioning] Reconciled role (current: ${existingRole} -> SUPER_ADMIN) and verified active state.`);
+        }
       } else {
-        userId = '10000000-0000-0000-0000-000000000001';
-        console.log(`[Calyvia Provisioning] Creating new SUPER_ADMIN user (${userId})...`);
+        isNewUser = true;
+        // Synchronize with existing Supabase auth.users UID if available to guarantee unified identity
+        const authUserCheck = await client.query('SELECT id FROM auth.users WHERE email = $1', [email]);
+        userId = authUserCheck.rows.length > 0 ? authUserCheck.rows[0].id : '10000000-0000-0000-0000-000000000001';
+        console.log(`[Calyvia Provisioning] Registering new primary SUPER_ADMIN user (${userId})...`);
         await client.query(
-          `INSERT INTO public.users (id, email, password_hash, role, full_name, phone, is_active)
-           VALUES ($1, $2, $3, 'SUPER_ADMIN', $4, $5, true)
-           ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = 'SUPER_ADMIN'`,
-          [userId, email.toLowerCase(), passwordHash, fullName, phone],
+          `INSERT INTO public.users (id, email, password_hash, role, full_name, phone, is_active, must_change_password)
+           VALUES ($1, $2, $3, 'SUPER_ADMIN', $4, $5, true, $6)
+           ON CONFLICT (email) DO UPDATE SET 
+             role = 'SUPER_ADMIN', 
+             full_name = EXCLUDED.full_name,
+             is_active = true`,
+          [userId, email, passwordHash, fullName, phone, requirePasswordChange],
         );
+        console.log(`[Calyvia Provisioning] User record created with initial temporary password flag: ${requirePasswordChange}`);
       }
 
-      // Ensure staff profile exists
+      // Reconcile associated staff profile
+      console.log(`[Calyvia Provisioning] Reconciling staff profile for administrator (${userId})...`);
       await client.query(
-        `INSERT INTO public.staff_profiles (id, user_id, national_id_encrypted, department, job_title, date_joined)
-         VALUES (gen_random_uuid(), $1, 'ENC:ADMIN:PROVISIONED', 'Executive Management & Administration', 'Medical Director & Administrator', now())
-         ON CONFLICT (user_id) DO NOTHING`,
+        `INSERT INTO public.staff_profiles (
+           id, user_id, national_id_encrypted, department, job_title, 
+           license_number, license_board, date_joined
+         ) VALUES (
+           gen_random_uuid(), $1::uuid, 'ENC:ADMIN:PROVISIONED', 'Executive Management & Administration', 
+           'Medical Director & Primary Administrator', 'KMPDC/A/BARAKA', 'Kenya Medical Practitioners and Dentists Council', now()
+         ) ON CONFLICT (user_id) DO UPDATE SET
+           department = 'Executive Management & Administration',
+           job_title = 'Medical Director & Primary Administrator'`,
         [userId],
       );
 
-      // Record audit log
+      // Record immutable security audit log entry
       await client.query(
-        `INSERT INTO public.audit_logs (id, user_id, role, action, entity_name, entity_id, old_values, new_values, timestamp)
-         VALUES (gen_random_uuid(), $1, 'SUPER_ADMIN', 'PROVISION_ADMIN_ACCOUNT', 'users', $1, NULL, $2, now())`,
-        [userId, JSON.stringify({ email: email.toLowerCase(), role: 'SUPER_ADMIN', provisionedAt: new Date().toISOString() })],
+        `INSERT INTO public.audit_logs (
+           id, user_id, role, action, entity_name, entity_id, new_values, timestamp
+         ) VALUES (
+           gen_random_uuid(), $1::uuid, 'SUPER_ADMIN', 'BOOTSTRAP_PRIMARY_ADMINISTRATOR', 'users', $2::text, $3::jsonb, now()
+         )`,
+        [
+          userId,
+          userId,
+          JSON.stringify({
+            email,
+            role: 'SUPER_ADMIN',
+            isNewUser,
+            passwordReset: shouldResetPassword,
+            mustChangePassword: requirePasswordChange,
+            provisionedAt: new Date().toISOString(),
+          }),
+        ],
       );
 
       await client.query('COMMIT');
-      console.log(`[Calyvia Provisioning] SUCCESS: Administrator account [${email}] provisioned with SUPER_ADMIN privileges.`);
+      console.log(`[Calyvia Provisioning] SUCCESS: PostgreSQL database records initialized for [${email}].`);
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;
     } finally {
       client.release();
     }
+
+    // Synchronize Supabase Auth Identity (if credentials configured)
+    const supabaseUrl = process.env.SUPABASE_URL || '';
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '';
+
+    if (supabaseUrl && supabaseServiceKey) {
+      try {
+        console.log('[Calyvia Provisioning] Synchronizing Supabase Auth administration user...');
+        const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+          auth: { autoRefreshToken: false, persistSession: false },
+        });
+
+        const { data: usersData, error: listError } = await supabase.auth.admin.listUsers();
+        if (!listError && usersData?.users) {
+          const existingAuthUser = usersData.users.find((u) => u.email?.toLowerCase() === email);
+
+          if (!existingAuthUser) {
+            console.log(`[Calyvia Provisioning] Creating user in Supabase Auth [${email}]...`);
+            const { data: createData, error: createError } = await supabase.auth.admin.createUser({
+              email,
+              password,
+              email_confirm: true,
+              user_metadata: { role: 'SUPER_ADMIN', fullName },
+              app_metadata: { role: 'SUPER_ADMIN' },
+            });
+
+            if (createError) {
+              console.warn(`[Calyvia Provisioning] Supabase Auth creation note: ${createError.message}`);
+            } else {
+              console.log(`[Calyvia Provisioning] Supabase Auth identity created (auth id: ${createData.user?.id}).`);
+            }
+          } else {
+            console.log(`[Calyvia Provisioning] Supabase Auth user exists (${existingAuthUser.id}). Reconciling roles...`);
+            await supabase.auth.admin.updateUserById(existingAuthUser.id, {
+              user_metadata: { role: 'SUPER_ADMIN', fullName },
+              app_metadata: { role: 'SUPER_ADMIN' },
+            });
+            if (shouldResetPassword) {
+              await supabase.auth.admin.updateUserById(existingAuthUser.id, { password });
+              console.log('[Calyvia Provisioning] Supabase Auth password synchronized.');
+            }
+          }
+        }
+      } catch (authErr: any) {
+        console.warn(`[Calyvia Provisioning] Supabase Auth API synchronization note: ${authErr.message}`);
+      }
+    }
+
+    console.log(`
+==============================================================================
+CALYVIA WELLNESS CENTER — PRIMARY ADMINISTRATOR PROVISIONING COMPLETE
+==============================================================================
+Account Email:       ${email}
+Account Role:        SUPER_ADMIN (Facility Director & Primary Authority)
+Status:              ACTIVE
+Temporary Password:  ${shouldResetPassword ? 'CONFIGURED (Must change on login)' : 'PRESERVED'}
+Security Definer:    Authoritative in PostgreSQL public.users + Supabase Auth
+==============================================================================
+    `);
   } catch (err: any) {
     console.error(`[Calyvia Provisioning] FAILED: ${err.message}`);
     process.exit(1);

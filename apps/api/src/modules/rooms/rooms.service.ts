@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { BedStatus } from '@calyvia/shared';
 
 export interface AllocateBedDto {
   bedId: string;
-  patientId: string;
+  patientId?: string;
   admissionId: string;
 }
 
@@ -23,55 +23,28 @@ export class RoomsService {
       if (this.prisma && this.prisma.room) {
         return await this.prisma.room.findMany({
           include: {
-            beds: {
-              include: {
-                allocations: {
-                  where: { isActive: true },
-                  include: { patient: true },
-                },
-              },
-            },
+            beds: true,
           },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Rooms and beds fetch error:', err);
     }
-
-    return [
-      {
-        id: 'room-1',
-        roomNumber: 'DTX-01',
-        wardName: 'Ground Detox Ward',
-        roomType: 'DETOX_WARD',
-        dailyRateKES: 12000,
-        beds: [
-          { id: 'bed-1', bedNumber: 'Bed A', status: BedStatus.OCCUPIED, patientName: 'James Mwangi' },
-          { id: 'bed-2', bedNumber: 'Bed B', status: BedStatus.AVAILABLE },
-        ],
-      },
-      {
-        id: 'room-2',
-        roomNumber: 'HRZ-101',
-        wardName: 'Horizon Male Wing',
-        roomType: 'INPATIENT_MALE',
-        dailyRateKES: 8500,
-        beds: [
-          { id: 'bed-3', bedNumber: 'Bed 1', status: BedStatus.OCCUPIED, patientName: 'Brian Otieno' },
-          { id: 'bed-4', bedNumber: 'Bed 2', status: BedStatus.AVAILABLE },
-        ],
-      },
-    ];
+    return [];
   }
 
   async allocateBed(dto: AllocateBedDto) {
+    if (!dto.bedId || !dto.admissionId) {
+      throw new BadRequestException('Bed ID and admission episode ID are required.');
+    }
+
     try {
       if (this.prisma && this.prisma.bedAllocation) {
         return await this.prisma.$transaction(async (tx) => {
           const allocation = await tx.bedAllocation.create({
             data: {
               bedId: dto.bedId,
-              patientId: dto.patientId,
+              patientId: dto.patientId || null,
               admissionId: dto.admissionId,
               isActive: true,
             },
@@ -85,19 +58,17 @@ export class RoomsService {
           return allocation;
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database connection unavailable');
+    } catch (err: any) {
+      throw new BadRequestException(`Failed to allocate bed: ${err.message || 'Database error'}`);
     }
-
-    return {
-      id: 'mock-alloc-1',
-      ...dto,
-      startDate: new Date().toISOString(),
-      isActive: true,
-    };
   }
 
   async transferBed(dto: TransferBedDto) {
+    if (!dto.currentAllocationId || !dto.newBedId) {
+      throw new BadRequestException('Current allocation ID and target bed ID are required.');
+    }
+
     try {
       if (this.prisma && this.prisma.bedAllocation) {
         return await this.prisma.$transaction(async (tx) => {
@@ -105,48 +76,44 @@ export class RoomsService {
             where: { id: dto.currentAllocationId },
           });
 
-          if (oldAlloc) {
-            await tx.bedAllocation.update({
-              where: { id: dto.currentAllocationId },
-              data: {
-                isActive: false,
-                endDate: new Date(),
-                transferReason: dto.transferReason,
-              },
-            });
-
-            await tx.bed.update({
-              where: { id: oldAlloc.bedId },
-              data: { status: BedStatus.AVAILABLE as any },
-            });
-
-            const newAlloc = await tx.bedAllocation.create({
-              data: {
-                bedId: dto.newBedId,
-                patientId: oldAlloc.patientId,
-                admissionId: oldAlloc.admissionId,
-                isActive: true,
-              },
-            });
-
-            await tx.bed.update({
-              where: { id: dto.newBedId },
-              data: { status: BedStatus.OCCUPIED as any },
-            });
-
-            return newAlloc;
+          if (!oldAlloc) {
+            throw new NotFoundException(`Allocation ${dto.currentAllocationId} not found.`);
           }
+
+          await tx.bedAllocation.update({
+            where: { id: dto.currentAllocationId },
+            data: {
+              isActive: false,
+              endDate: new Date(),
+              transferReason: dto.transferReason,
+            },
+          });
+
+          await tx.bed.update({
+            where: { id: oldAlloc.bedId },
+            data: { status: BedStatus.AVAILABLE as any },
+          });
+
+          const newAlloc = await tx.bedAllocation.create({
+            data: {
+              bedId: dto.newBedId,
+              patientId: oldAlloc.patientId,
+              admissionId: oldAlloc.admissionId,
+              isActive: true,
+            },
+          });
+
+          await tx.bed.update({
+            where: { id: dto.newBedId },
+            data: { status: BedStatus.OCCUPIED as any },
+          });
+
+          return newAlloc;
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database connection unavailable');
+    } catch (err: any) {
+      throw new BadRequestException(`Failed to transfer bed: ${err.message || 'Database error'}`);
     }
-
-    return {
-      id: 'mock-alloc-2',
-      bedId: dto.newBedId,
-      transferReason: dto.transferReason,
-      isActive: true,
-    };
   }
 }

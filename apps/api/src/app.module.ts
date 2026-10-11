@@ -47,11 +47,21 @@ import { AutomationModule } from './modules/automation/automation.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { SystemAdminModule } from './modules/system-admin/system-admin.module';
+import * as path from 'path';
 import { AiExtensionModule } from './modules/ai-extension/ai-extension.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: [
+        path.resolve(process.cwd(), '.env'),
+        path.resolve(process.cwd(), '../../.env'),
+        path.resolve(__dirname, '../../.env'),
+        path.resolve(__dirname, '../../../.env'),
+        path.resolve(__dirname, '../../../../.env'),
+      ],
+    }),
     PrismaModule,
     CryptoModule,
     AuditModule,

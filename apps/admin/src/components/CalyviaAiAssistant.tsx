@@ -21,6 +21,7 @@ import {
   Stethoscope,
 } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
+import { useAuth } from './AuthContext';
 
 interface Message {
   id: string;
@@ -40,6 +41,33 @@ const DEFAULT_SUGGESTED_PROMPTS = [
   'How do I register a patient in CRM?',
 ];
 
+interface HeadsetIconProps extends React.SVGProps<SVGSVGElement> {}
+
+export const PulseHeadsetIcon: React.FC<HeadsetIconProps> = ({ className, ...props }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    {...props}
+  >
+    {/* Headset arc */}
+    <path d="M4 12V9a8 8 0 0 1 16 0v3" />
+    {/* Left earpiece */}
+    <rect x="2" y="11" width="4" height="6" rx="2" />
+    {/* Right earpiece */}
+    <rect x="18" y="11" width="4" height="6" rx="2" />
+    {/* Microphone boom and mic */}
+    <path d="M19 17v1a3 3 0 0 1-3 3h-2" />
+    <circle cx="13" cy="21" r="1" fill="currentColor" />
+    {/* Center vital/sound wave bridging the ears */}
+    <path d="M6 14h3l1.5-2.5 2 5 1.5-2.5h4" />
+  </svg>
+);
+
 export const CalyviaAiAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
@@ -49,6 +77,9 @@ export const CalyviaAiAssistant: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { theme } = useTheme();
+  const { user } = useAuth();
+
+  const userGreetingName = user?.fullName ? user.fullName.split(' ')[0] : 'there';
 
   // Initial welcome greeting
   useEffect(() => {
@@ -57,7 +88,7 @@ export const CalyviaAiAssistant: React.FC = () => {
         {
           id: 'welcome-1',
           role: 'assistant',
-          content: `Hello **Dr. Antony Baraka** 👋\n\nI am **Calyvia AI**, your institutional management copilot. I am connected live to Calyvia Wellness Center's PostgreSQL database and operational workflows.\n\nI can help you monitor **bed census**, review **today's appointments**, inspect **Daraja M-Pesa billing**, check **high-acuity detox protocols (CIWA/COWS)**, and navigate all **28 system modules**.\n\n*How can I assist you with center operations today?*`,
+          content: `Hello **${user?.fullName || 'there'}** 👋\n\nI am **Calyvia AI**, your institutional management copilot. I am connected live to Calyvia Wellness Center's PostgreSQL database and operational workflows.\n\nI can help you monitor **bed census**, review **today's appointments**, inspect **Daraja M-Pesa billing**, check **high-acuity detox protocols (CIWA/COWS)**, and navigate all **28 system modules**.\n\n*How can I assist you with center operations today?*`,
           timestamp: new Date().toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' }),
           suggestedFollowUps: [
             'Give me today\'s operational summary',
@@ -67,7 +98,7 @@ export const CalyviaAiAssistant: React.FC = () => {
         },
       ]);
     }
-  }, []);
+  }, [user]);
 
   // Auto-scroll to bottom of conversation
   useEffect(() => {
@@ -253,18 +284,12 @@ export const CalyviaAiAssistant: React.FC = () => {
               setIsOpen(true);
               setIsMinimized(false);
             }}
-            title="Calyvia AI Assistant"
-            aria-label="Calyvia AI Assistant"
-            className="group relative flex items-center space-x-2.5 px-4 py-3 bg-primary hover:bg-primary-hover active:scale-95 text-primary-foreground font-semibold rounded-2xl shadow-elevated border border-primary/20 hover:-translate-y-1 transition-all duration-200"
+            title="Open Calyvia AI assistant"
+            aria-label="Open Calyvia AI assistant"
+            className="group relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-primary hover:bg-primary-hover active:scale-95 text-primary-foreground rounded-full shadow-elevated border border-primary/20 hover:-translate-y-1 transition-all duration-200"
           >
-            <div className="relative">
-              <Sparkles className="w-5 h-5 text-primary-foreground group-hover:rotate-12 transition-transform duration-200" />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-primary animate-pulse" />
-            </div>
-            <span className="text-xs font-serif font-bold tracking-wide">Calyvia AI</span>
-            <span className="hidden sm:inline text-[10px] uppercase font-mono px-1.5 py-0.5 rounded-full bg-white/20 text-white font-medium">
-              Copilot
-            </span>
+            <PulseHeadsetIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground group-hover:scale-105 transition-transform duration-200" />
+            <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-primary animate-pulse" />
           </button>
         )}
       </div>
@@ -282,7 +307,7 @@ export const CalyviaAiAssistant: React.FC = () => {
           <div className="p-3.5 bg-surface-subtle border-b border-border flex items-center justify-between flex-shrink-0 select-none">
             <div className="flex items-center space-x-2.5 min-w-0">
               <div className="w-8 h-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 shadow-xs">
-                <Sparkles className="w-4 h-4" />
+                <PulseHeadsetIcon className="w-4 h-4 text-primary-foreground" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center space-x-2">
@@ -475,7 +500,7 @@ function generateLocalInstitutionalResponse(query: string): {
   // Operational summary
   if (q.includes('summary') || q.includes('operational') || q.includes('status')) {
     return {
-      content: `### 🏥 Calyvia Wellness Center — Operational Summary\n\n**Facility Status:** OPERATIONAL (Mugutha, Ruiru, Kiambu County)\n\n#### 🛏️ Inpatient Bed Census & Capacity\n* **Total Beds Occupied:** **28 / 32 Beds** (87.5% occupancy)\n* **Available Beds:** **4 Beds** (2 Male Inpatient, 2 Female Inpatient)\n* **Active Medical Detox:** **6 Patients** on CIWA/COWS withdrawal monitoring (100% capacity)\n* **Rehabilitation Wards:** Horizon Wing (14/16), Serenity Wing (6/8), VIP Suite (2/2)\n\n#### 🩺 Clinical & Financial Performance\n* **Appointments Today:** **14 Sessions** (8 completed, 6 pending)\n* **Vitals Alerts:** John Kamau (Detox Bed 02) due for 14:00 CIWA-Ar scoring\n* **MTD Revenue:** **KES 3,840,000** (68.4% Daraja M-Pesa, 31.6% Bank Transfer)\n* **Staff on Duty:** **14 Active Staff Members** on shift`,
+      content: `### 🏥 Calyvia Wellness Center — Operational Summary\n\n**Facility Status:** OPERATIONAL (Mugutha, Ruiru, Kiambu County)\n\nLive metrics are retrieved dynamically from the database. When the system is initialized or tables are empty, record counts start at zero until real patient admissions and appointments are entered.`,
       suggestedFollowUps: [
         'What appointments are scheduled for today?',
         'Summarize bed census & ward occupancy',
@@ -488,7 +513,7 @@ function generateLocalInstitutionalResponse(query: string): {
   // Appointments
   if (q.includes('appointment') || q.includes('schedule') || q.includes('calendar')) {
     return {
-      content: `### 📅 Today's Clinical & Consultation Schedule\n\n* **08:30 AM:** Morning MDT Shift Handover — *Dr. Baraka & Nurse Wangari* (Completed)\n* **09:00 AM:** John Kamau (CAL-2026-0001) — *Detox Protocol CIWA Review* (Confirmed)\n* **11:30 AM:** Brian Otieno (CAL-2026-0041) — *CBT Individual Therapy* (In Progress)\n* **02:00 PM:** Faith Wanjiku (CAL-2026-0052) — *Sedative Taper Review* (Waiting)\n* **04:30 PM:** Kamau Family Support — *Family Reintegration Session* (Scheduled)\n\n*14 sessions total scheduled across our clinical suites today.*`,
+      content: `### 📅 Clinical & Consultation Schedule\n\nConsultations, MDT reviews, and therapy sessions are tracked live. Use **Module 06 (Appointments & Calendar)** to view or schedule appointments for registered patients.`,
       suggestedFollowUps: [
         'How do I schedule a new appointment in Module 06?',
         'Give me the staff workload for today',
@@ -501,7 +526,7 @@ function generateLocalInstitutionalResponse(query: string): {
   // Census / Beds
   if (q.includes('census') || q.includes('bed') || q.includes('occupancy') || q.includes('ward')) {
     return {
-      content: `### 🛏️ Calyvia Inpatient Ward & Bed Census\n\n* **Total Facility Census:** **28 / 32 Beds (87.5%)**\n\n#### Ward Allocation:\n* **Detox Ward (High Acuity):** **6 / 6 Beds (100% full)**\n* **Horizon Wing (Male Rehab):** **14 / 16 Beds** (2 beds available)\n* **Serenity Wing (Female Rehab):** **6 / 8 Beds** (2 beds available)\n* **VIP Executive Suite:** **2 / 2 Beds** (Fully occupied)\n\n**Admissions Flow:** 5 CRM intake leads are currently in triage. 4 beds are ready for allocation under **Module 09: Rooms & Bed Allocation**.`,
+      content: `### 🛏️ Calyvia Inpatient Ward & Bed Census\n\nWard and room capacities are managed under **Module 09: Rooms & Bed Allocation**. Bed allocations update in real-time as patients are admitted through **Module 02 (CRM)**.`,
       suggestedFollowUps: [
         'How do I admit a patient in Module 02?',
         'What is the CIWA-Ar protocol for detox?',
@@ -514,7 +539,7 @@ function generateLocalInstitutionalResponse(query: string): {
   // Billing
   if (q.includes('billing') || q.includes('invoice') || q.includes('revenue') || q.includes('mpesa') || q.includes('m-pesa')) {
     return {
-      content: `### 💳 Billing & Financial Performance (MTD)\n\n* **Month-to-Date Collections:** **KES 3,840,000**\n* **Outstanding Receivables:** **KES 620,000**\n* **Safaricom Daraja M-Pesa Share:** **68.4%**\n* **Bank Transfer Share:** **31.6%**\n* **Active Invoices:** 42 invoices issued this cycle\n\n*You can trigger instant Daraja M-Pesa STK prompts for rehab deposits under **Module 07: Billing & Daraja M-Pesa**.*`,
+      content: `### 💳 Billing & Financial Management\n\nFinancial statements and invoices reflect actual payments recorded in the database. You can trigger live Safaricom Daraja M-Pesa STK push prompts for patient payments under **Module 07 (Billing & Daraja M-Pesa)**.`,
       suggestedFollowUps: [
         'How do I trigger an M-Pesa STK push?',
         'Show today\'s operational summary',

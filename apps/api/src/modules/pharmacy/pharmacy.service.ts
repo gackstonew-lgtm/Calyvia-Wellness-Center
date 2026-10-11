@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 
 export interface CreatePrescriptionDto {
@@ -26,41 +26,20 @@ export class PharmacyService {
     try {
       if (this.prisma && this.prisma.medication) {
         return await this.prisma.medication.findMany({
-          include: { batches: true },
           orderBy: { brandName: 'asc' },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Medications fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-med-1',
-        brandName: 'Valium',
-        genericName: 'Diazepam',
-        strength: '10mg',
-        dosageForm: 'Tablet',
-        currentStock: 250,
-        reorderLevel: 20,
-        unitPriceKES: 50,
-        isControlledDrug: true,
-      },
-      {
-        id: 'mock-med-2',
-        brandName: 'Neurobion',
-        genericName: 'Vitamin B-Complex + Thiamine',
-        strength: '100mg',
-        dosageForm: 'Tablet',
-        currentStock: 500,
-        reorderLevel: 30,
-        unitPriceKES: 35,
-        isControlledDrug: false,
-      },
-    ];
+    return [];
   }
 
   async createPrescription(dto: CreatePrescriptionDto) {
+    if (!dto.patientId || !dto.doctorName || !dto.medicationId) {
+      throw new BadRequestException('Patient ID, doctor name, and medication ID are mandatory.');
+    }
+
     try {
       if (this.prisma && this.prisma.prescription) {
         return await this.prisma.prescription.create({
@@ -68,39 +47,25 @@ export class PharmacyService {
             patientId: dto.patientId,
             doctorName: dto.doctorName,
             status: 'ACTIVE',
-            items: {
-              create: {
-                medicationId: dto.medicationId,
-                dosage: dto.dosage,
-                frequency: dto.frequency,
-                durationDays: dto.durationDays,
-                instructions: dto.instructions || null,
-              },
-            },
+            medicationId: dto.medicationId,
+            dosage: dto.dosage,
+            frequency: dto.frequency,
+            durationDays: dto.durationDays,
+            instructions: dto.instructions || null,
           },
-          include: { items: { include: { medication: true } } },
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database connection unavailable');
+    } catch (err: any) {
+      throw new BadRequestException(`Failed to create prescription: ${err.message || 'Database error'}`);
     }
-
-    return {
-      id: 'mock-rx-1',
-      patientId: dto.patientId,
-      doctorName: dto.doctorName,
-      status: 'ACTIVE',
-      items: [
-        {
-          dosage: dto.dosage,
-          frequency: dto.frequency,
-          durationDays: dto.durationDays,
-        },
-      ],
-    };
   }
 
   async administerMedication(dto: AdministerMedicationDto) {
+    if (!dto.prescriptionId || !dto.administeredBy || !dto.status) {
+      throw new BadRequestException('Prescription ID, administered by, and status are mandatory.');
+    }
+
     try {
       if (this.prisma && this.prisma.medicationAdministration) {
         return await this.prisma.medicationAdministration.create({
@@ -112,16 +77,9 @@ export class PharmacyService {
           },
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database connection unavailable');
+    } catch (err: any) {
+      throw new BadRequestException(`Failed to administer medication: ${err.message || 'Database error'}`);
     }
-
-    return {
-      id: 'mock-mar-1',
-      prescriptionId: dto.prescriptionId,
-      administeredBy: dto.administeredBy,
-      status: dto.status,
-      administeredAt: new Date().toISOString(),
-    };
   }
 }

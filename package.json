@@ -14,7 +14,8 @@
     "build": "npm run build --workspaces --if-present",
     "build:admin": "npm run build --workspace=@calyvia/shared && npm run build --workspace=@calyvia/admin",
     "test": "npm run test --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present",
+    "provision:admin": "npm run provision:admin --workspace=@calyvia/api --"
   },
   "keywords": [
     "calyvia",

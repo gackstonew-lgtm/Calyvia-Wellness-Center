@@ -35,22 +35,10 @@ export class ClinicalService {
         });
         return this.decryptNote(note);
       }
-    } catch {
-      // In-memory fallback
+      throw new Error('Database connection unavailable');
+    } catch (err: any) {
+      throw new Error(`Failed to record clinical note: ${err.message || 'Database error'}`);
     }
-
-    return {
-      id: 'mock-note-1',
-      patientId: dto.patientId,
-      authorId,
-      noteType: dto.noteType,
-      subjective: dto.subjective,
-      objective: dto.objective,
-      assessment: dto.assessment,
-      plan: dto.plan,
-      icd10Diagnosis: dto.icd10Diagnosis,
-      createdAt: new Date().toISOString(),
-    };
   }
 
   async getPatientNotes(patientId: string) {
@@ -63,24 +51,10 @@ export class ClinicalService {
         });
         return notes.map((n) => this.decryptNote(n));
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Clinical notes fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-note-1',
-        patientId,
-        authorName: 'Dr. Kevin Kiprotich (Consultant Psychiatrist)',
-        noteType: 'PSYCHIATRIC_EVALUATION',
-        subjective: 'Patient reports persistent insomnia, severe tremors in morning',
-        objective: 'BP: 142/90, Pulse: 98 bpm, Tremor +++, Sweats ++, Alert & Oriented x3',
-        assessment: 'Severe Alcohol Dependence with Active Withdrawal (CIWA 18)',
-        plan: 'Commence Diazepam taper: 10mg PO QDS x 48h, Thiamine 100mg IV OD, fluid resuscitation',
-        icd10Diagnosis: 'F10.232 (Alcohol dependence with withdrawal state)',
-        createdAt: new Date().toISOString(),
-      },
-    ];
+    return [];
   }
 
   private decryptNote(note: any) {

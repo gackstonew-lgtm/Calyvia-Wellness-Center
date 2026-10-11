@@ -36,15 +36,10 @@ export class MovementService {
           },
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database service unavailable');
+    } catch (err: any) {
+      throw new Error(`Failed to record movement: ${err.message}`);
     }
-
-    return {
-      id: 'mock-move-1',
-      ...dto,
-      status: 'ON_LEAVE',
-    };
   }
 
   async registerVisitor(dto: RegisterVisitorDto) {
@@ -62,16 +57,10 @@ export class MovementService {
           },
         });
       }
-    } catch {
-      // Fallback
+      throw new Error('Database service unavailable');
+    } catch (err: any) {
+      throw new Error(`Failed to register visitor: ${err.message}`);
     }
-
-    return {
-      id: 'mock-vis-1',
-      ...dto,
-      belongingsChecked: true,
-      checkInTime: new Date().toISOString(),
-    };
   }
 
   async getRecentVisitors() {
@@ -82,21 +71,9 @@ export class MovementService {
           take: 20,
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Visitor logs fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-vis-1',
-        visitorName: 'Mary Wanjiru Mwangi',
-        nationalId: '24918231',
-        phoneNumber: '+254722889900',
-        patientName: 'James Mwangi',
-        relationship: 'Spouse',
-        belongingsChecked: true,
-        checkInTime: new Date().toISOString(),
-      },
-    ];
+    return [];
   }
 }

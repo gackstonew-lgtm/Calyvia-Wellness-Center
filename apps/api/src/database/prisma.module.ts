@@ -4,7 +4,13 @@ import { SupabaseService } from './supabase.service';
 
 @Global()
 @Module({
-  providers: [PrismaService, SupabaseService],
+  providers: [
+    SupabaseService,
+    {
+      provide: PrismaService,
+      useExisting: SupabaseService,
+    },
+  ],
   exports: [PrismaService, SupabaseService],
 })
 export class PrismaModule {}

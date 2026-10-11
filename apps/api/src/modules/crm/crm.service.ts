@@ -37,18 +37,10 @@ export class CrmService {
           },
         });
       }
-    } catch {
-      // In-memory fallback
+      throw new Error('Database connection unavailable');
+    } catch (err: any) {
+      throw new Error(`Failed to create lead enquiry: ${err.message || 'Database error'}`);
     }
-
-    return {
-      id: 'mock-lead-1',
-      enquiryNumber: enqNumber,
-      fullName: dto.fullName,
-      phone,
-      pipelineStatus: 'NEW_INQUIRY',
-      createdAt: new Date().toISOString(),
-    };
   }
 
   async getLeads(status?: string) {
@@ -59,23 +51,10 @@ export class CrmService {
           orderBy: { createdAt: 'desc' },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Leads fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-lead-1',
-        enquiryNumber: 'ENQ-2026-1042',
-        fullName: 'Brian Kariuki',
-        phone: '+254722123456',
-        channel: 'WEBSITE_FORM',
-        substancesUsed: 'Alcohol, Cannabis',
-        urgencyLevel: 'URGENT',
-        pipelineStatus: 'NEW_INQUIRY',
-        createdAt: new Date().toISOString(),
-      },
-    ];
+    return [];
   }
 
   async updateLeadStatus(id: string, dto: UpdateLeadStatusDto) {
@@ -89,8 +68,8 @@ export class CrmService {
           },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Update lead status error:', err);
     }
     return { id, pipelineStatus: dto.status, notes: dto.notes };
   }
@@ -125,12 +104,12 @@ export class CrmService {
 
         return admission;
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Process admission error:', err);
     }
 
     return {
-      id: 'mock-admission-1',
+      id: 'admission-uuid-1',
       admissionNumber: admNumber,
       patientId: dto.patientId,
       admissionType: dto.admissionType,
@@ -148,19 +127,9 @@ export class CrmService {
           orderBy: { admissionDate: 'desc' },
         });
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Admissions fetch error:', err);
     }
-
-    return [
-      {
-        id: 'mock-admission-1',
-        admissionNumber: 'ADM-2026-0042',
-        patientId: 'mock-patient-1',
-        programType: 'REHAB_30_DAYS',
-        status: 'ACTIVE',
-        admissionDate: new Date().toISOString(),
-      },
-    ];
+    return [];
   }
 }

@@ -14,6 +14,15 @@ describe('SecurityService (Authentication & Password Security)', () => {
     mockPrisma = {
       user: {
         findUnique: jest.fn(),
+        create: jest.fn().mockResolvedValue({ id: 'mock-user-001', email: 'jane.muthoni@calyviawellness.co.ke' }),
+        update: jest.fn().mockResolvedValue({ id: 'mock-user-001' }),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      staffProfile: {
+        create: jest.fn().mockResolvedValue({ id: 'mock-profile-001' }),
+      },
+      auditLog: {
+        create: jest.fn().mockResolvedValue({ id: 'mock-audit-001' }),
       },
     };
 

@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
@@ -47,9 +47,91 @@ export class RequestAccessDto {
   @IsNotEmpty()
   jobTitle!: string;
 
+  @ApiProperty({ example: 'NURSE', required: false })
+  @IsOptional()
+  @IsString()
+  requestedRole?: string;
+
+  @ApiProperty({ example: 'InitialTempPassword#2026', required: false })
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  password?: string;
+
   @ApiProperty({ example: 'Joining clinical rotation in detox ward' })
   @IsString()
   @IsNotEmpty()
   justification!: string;
+}
+
+export class ChangePasswordDto {
+  @ApiProperty({ example: 'admin123' })
+  @IsString()
+  @IsNotEmpty()
+  currentPassword!: string;
+
+  @ApiProperty({ example: 'NewSecureAdminPassword#2026' })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  newPassword!: string;
+}
+
+export class ApproveAccessDto {
+  @ApiProperty({ example: 'NURSE', required: false })
+  @IsOptional()
+  @IsString()
+  assignedRole?: string;
+
+  @ApiProperty({ example: 'Verified with HR and professional board roster', required: false })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class RejectAccessDto {
+  @ApiProperty({ example: 'Institutional documentation incomplete' })
+  @IsString()
+  @IsNotEmpty()
+  reason!: string;
+}
+
+export class UpdateUserStatusDto {
+  @ApiProperty({ example: 'ACTIVE', enum: ['ACTIVE', 'SUSPENDED', 'DEACTIVATED'] })
+  @IsString()
+  @IsNotEmpty()
+  status!: string;
+
+  @ApiProperty({ example: 'NURSE', required: false })
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @ApiProperty({ example: 'Administrative review completed', required: false })
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}
+
+export class UpdateProfileDto {
+  @ApiProperty({ example: 'Dr. Jane Muthoni', required: false })
+  @IsOptional()
+  @IsString()
+  fullName?: string;
+
+  @ApiProperty({ example: '+254712345678', required: false })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @ApiProperty({ example: 'Psychiatry & Detox', required: false })
+  @IsOptional()
+  @IsString()
+  department?: string;
+
+  @ApiProperty({ example: 'Consultant Psychiatrist', required: false })
+  @IsOptional()
+  @IsString()
+  jobTitle?: string;
 }
 

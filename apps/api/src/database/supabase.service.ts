@@ -1,6 +1,8 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { Pool, PoolClient } from 'pg';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
 // Table name mappings
 const MODEL_TABLE_MAP: Record<string, string> = {
@@ -48,14 +50,96 @@ const MODEL_TABLE_MAP: Record<string, string> = {
 
 // Key transformation utilities
 function toSnake(str: string): string {
+  // Common entity mappings
   if (str === 'registrationNumber') return 'upi';
   if (str === 'resource') return 'entity_name';
   if (str === 'resourceId') return 'entity_id';
+
+  // Patients
+  if (str === 'residentialAddress') return 'address';
+  if (str === 'knownAllergiesEnc' || str === 'allergiesEncrypted') return 'allergies_encrypted';
+  if (str === 'substanceHistoryEnc' || str === 'substanceHistoryEncrypted') return 'substance_history_encrypted';
+
+  // Family / Emergency Contacts
+  if (str === 'hasConsentToUpdate' || str === 'consentToContact') return 'consent_to_contact';
+
+  // Billing & Invoices
+  if (str === 'totalAmountKES' || str === 'totalAmount') return 'total_amount';
+  if (str === 'paidAmountKES' || str === 'paidAmount') return 'paid_amount';
+  if (str === 'balanceKES' || str === 'balanceDue') return 'balance_due';
+  if (str === 'unitPriceKES' || str === 'unitPrice') return 'unit_price';
+  if (str === 'amountKES' || str === 'amountPaid') return 'amount_paid';
+  if (str === 'transactionRef') return 'payment_reference';
+
+  // Counselling
+  if (str === 'sessionNotesEnc' || str === 'notesEncrypted') return 'notes_encrypted';
+  if (str === 'durationMins' || str === 'durationMinutes') return 'duration_minutes';
+  if (str === 'scheduledAt' || str === 'sessionDate') return 'session_date';
+  if (str === 'goalsAddressed') return 'goals_progress_encrypted';
+
+  // Clinical Notes
+  if (str === 'subjectiveEnc' || str === 'subjective') return 'subjective_narrative_encrypted';
+  if (str === 'objectiveEnc' || str === 'objective') return 'objective_narrative_encrypted';
+  if (str === 'assessmentEnc' || str === 'assessment') return 'assessment_narrative_encrypted';
+  if (str === 'planEnc' || str === 'plan') return 'plan_narrative_encrypted';
+  if (str === 'icd10Diagnosis') return 'icd10_codes';
+
+  // CRM / Leads
+  if (str === 'enquiryNumber') return 'enquiry_number';
+  if (str === 'channel') return 'source';
+  if (str === 'substancesUsed') return 'substances_used';
+  if (str === 'urgencyLevel') return 'urgency_level';
+  if (str === 'pipelineStatus') return 'status';
+
+  // Detox & Assessments & Vitals
+  if (str === 'parametersJson') return 'breakdown';
+  if (str === 'evaluatedBy' || str === 'assessedBy') return 'assessor_id';
+  if (str === 'medicalOfficer') return 'supervising_doctor_id';
+  if (str === 'spO2Percentage') return 'oxygen_saturation';
+  if (str === 'temperatureC') return 'temperature_c';
+  if (str === 'recordedBy') return 'recorded_by';
+
+  // Appointments
+  if (str === 'staffMemberName') return 'staff_member_name';
+
+  // Inventory
+  if (str === 'name') return 'item_name';
+  if (str === 'unit') return 'unit_of_measure';
+  if (str === 'quantity') return 'current_stock';
+  if (str === 'minAlertQty') return 'minimum_reorder_level';
+  if (str === 'unitCostKES') return 'unit_cost';
+
+  // Incidents
+  if (str === 'category') return 'incident_type';
+  if (str === 'immediateAction') return 'immediate_action_taken';
+  if (str === 'reportedBy') return 'reported_by';
+
   return str.replace(/[A-Z]/g, (letter) => '_' + letter.toLowerCase());
 }
 
 function toCamel(str: string): string {
   if (str === 'upi') return 'registrationNumber';
+  if (str === 'entity_name') return 'resource';
+  if (str === 'entity_id') return 'resourceId';
+  if (str === 'address') return 'residentialAddress';
+  if (str === 'total_amount') return 'totalAmountKES';
+  if (str === 'paid_amount') return 'paidAmountKES';
+  if (str === 'balance_due') return 'balanceKES';
+  if (str === 'unit_price') return 'unitPriceKES';
+  if (str === 'amount_paid') return 'amountKES';
+  if (str === 'payment_reference') return 'transactionRef';
+  if (str === 'allergies_encrypted') return 'knownAllergiesEnc';
+  if (str === 'substance_history_encrypted') return 'substanceHistoryEnc';
+  if (str === 'consent_to_contact') return 'consentToContact';
+  if (str === 'notes_encrypted') return 'sessionNotesEnc';
+  if (str === 'duration_minutes') return 'durationMins';
+  if (str === 'session_date') return 'scheduledAt';
+  if (str === 'subjective_narrative_encrypted') return 'subjectiveEnc';
+  if (str === 'objective_narrative_encrypted') return 'objectiveEnc';
+  if (str === 'assessment_narrative_encrypted') return 'assessmentEnc';
+  if (str === 'plan_narrative_encrypted') return 'planEnc';
+  if (str === 'breakdown') return 'parametersJson';
+  if (str === 'assessor_id') return 'evaluatedBy';
   return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 }
 
@@ -65,6 +149,7 @@ function mapRow(row: any): any {
   for (const [k, v] of Object.entries(row)) {
     const camel = toCamel(k);
     out[camel] = v;
+    out[k] = v; // keep raw snake_case as well for uniform access
     if (k === 'upi') {
       out.upi = v;
       out.registrationNumber = v;
@@ -175,6 +260,24 @@ export class ModelRepository {
           room.beds = bedRes.rows.map(mapRow);
         }
       }
+      if (this.tableName === 'users' && args.include.staffProfile) {
+        for (const user of rows) {
+          const pRes = await this.queryFn(
+            `SELECT * FROM public."staff_profiles" WHERE user_id = $1 LIMIT 1`,
+            [user.id],
+          );
+          user.staffProfile = pRes.rows[0] ? mapRow(pRes.rows[0]) : null;
+        }
+      }
+      if (this.tableName === 'emergency_contacts' && args.include.patient) {
+        for (const contact of rows) {
+          const patRes = await this.queryFn(
+            `SELECT id, upi, first_name, last_name, status, phone FROM public."patients" WHERE id = $1 LIMIT 1`,
+            [contact.patientId],
+          );
+          contact.patient = patRes.rows[0] ? mapRow(patRes.rows[0]) : null;
+        }
+      }
     }
 
     return rows;
@@ -214,6 +317,13 @@ export class ModelRepository {
           [row.id],
         );
         row.emergencyContacts = cRes.rows.map(mapRow);
+      }
+      if (this.tableName === 'emergency_contacts' && args.include.patient) {
+        const patRes = await this.queryFn(
+          `SELECT id, upi, first_name, last_name, status, phone FROM public."patients" WHERE id = $1 LIMIT 1`,
+          [row.patientId],
+        );
+        row.patient = patRes.rows[0] ? mapRow(patRes.rows[0]) : null;
       }
     }
 
@@ -277,6 +387,44 @@ export class ModelRepository {
     const res = await this.queryFn(sql, values);
     return res.rows[0] ? mapRow(res.rows[0]) : null;
   }
+
+  async count(args?: { where?: Record<string, any> }): Promise<number> {
+    const conditions: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (args?.where) {
+      for (const [k, v] of Object.entries(args.where)) {
+        if (v === undefined) continue;
+        const col = toSnake(k);
+        if (v === null) {
+          conditions.push(`"${col}" IS NULL`);
+        } else if (typeof v === 'object' && v !== null && !Array.isArray(v) && !(v instanceof Date)) {
+          if (v.contains !== undefined) {
+            conditions.push(`"${col}" ILIKE $${idx++}`);
+            values.push(`%${v.contains}%`);
+          } else if (v.in !== undefined && Array.isArray(v.in)) {
+            conditions.push(`"${col}" = ANY($${idx++})`);
+            values.push(v.in);
+          } else if (v.not !== undefined) {
+            conditions.push(`"${col}" != $${idx++}`);
+            values.push(v.not);
+          }
+        } else {
+          conditions.push(`"${col}" = $${idx++}`);
+          values.push(v);
+        }
+      }
+    }
+
+    let sql = `SELECT COUNT(*)::int as count FROM public."${this.tableName}"`;
+    if (conditions.length > 0) {
+      sql += ` WHERE ${conditions.join(' AND ')}`;
+    }
+
+    const res = await this.queryFn(sql, values);
+    return res.rows[0] ? parseInt(res.rows[0].count, 10) : 0;
+  }
 }
 
 @Injectable()
@@ -288,6 +436,10 @@ export class SupabaseService implements OnModuleInit, OnModuleDestroy {
 
   public get client(): SupabaseClient {
     return SupabaseService.clientInstance!;
+  }
+
+  public static get staticClient(): SupabaseClient | null {
+    return SupabaseService.clientInstance;
   }
 
   public get pool(): Pool {
@@ -349,6 +501,14 @@ export class SupabaseService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     if (SupabaseService.isConnected) {
       return;
+    }
+
+    if (!process.env.DATABASE_URL) {
+      dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+      dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
+      dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+      dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+      dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
     }
 
     const rawConnectionString = process.env.DATABASE_URL || '';

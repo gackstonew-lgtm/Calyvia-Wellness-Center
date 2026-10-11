@@ -1,43 +1,83 @@
-# Calyvia Wellness Center — Supabase SQL Editor Deployment Guide
+# Calyvia Wellness Center — Supabase PostgreSQL Architecture & Deployment Guide
 
-**Target Environment:** Supabase Cloud / Self-Hosted Supabase PostgreSQL 16  
+**Target Environment:** Hosted Supabase Cloud / Self-Hosted Supabase PostgreSQL 16  
 **Compliance Standard:** Kenya Data Protection Act, 2019 (KDPA Sections 44–47)  
-**Data Policy:** Strictly Synthetic Clinical and Patient Data for Testing. ZERO Real Patient Information.  
+**Security Architecture:** AES-256-GCM clinical narrative encryption, Argon2id authentication, 100% RLS table coverage, role-based authorization  
+**Domain Table Count:** Exactly 40 Relational Domain Tables mapped to NestJS `ModelRepository`  
 
 ---
 
-## 1. Overview & Execution Order
+## 1. Overview & Script Inventory
 
-These SQL scripts are structured to be pasted directly into the **Supabase Dashboard SQL Editor** in strict numerical order. Each script is idempotent and handles dependency creation in order:
+The Calyvia HMIS/EMR database is structured into sequential, idempotent SQL scripts designed for direct execution in the **Supabase Dashboard SQL Editor** or via automated CI/CD migration runners:
 
-| Step | Script File | Purpose | Notes |
+| Step | Script File | Purpose | Idempotency & Safety Guarantees |
 |:--|:--|:--|:--|
-| **01** | [`01_extensions.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/01_extensions.sql) | Enables required PostgreSQL extensions | `uuid-ossp`, `pgcrypto`, `citext` |
-| **02** | [`02_types_and_enums.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/02_types_and_enums.sql) | Creates all custom domain ENUM types | 15 clinical & operational ENUMs |
-| **03** | [`03_tables.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/03_tables.sql) | DDL for all 41 domain tables | Foreign keys, defaults, timestamps |
-| **04** | [`04_indexes.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/04_indexes.sql) | Performance & query indexes | B-tree indexes on FKs & search fields |
-| **05** | [`05_rls_policies.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/05_rls_policies.sql) | Row Level Security (RLS) enforcement | 100% table coverage + least-privilege |
-| **06** | [`06_triggers_and_functions.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/06_triggers_and_functions.sql) | Automated triggers and helper functions | `updated_at`, audit trail, bed sync |
-| **07** | [`07_storage_buckets.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/07_storage_buckets.sql) | Storage buckets & storage RLS policies | `patient-documents`, `medical-records`, etc. |
-| **08** | [`08_seed_synthetic_data.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/08_seed_synthetic_data.sql) | Inserts synthetic test dataset | Fictitious staff, patients, beds, billing |
-| **09** | [`09_verify.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/09_verify.sql) | Verification and sanity queries | Verifies table counts, RLS, triggers |
-| **99** | [`99_reset_dev_only.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/99_reset_dev_only.sql) | Teardown & clean reset script | **DEVELOPMENT / STAGING ONLY** |
+| **00** | [`00_master_init_calyvia_database.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/00_master_init_calyvia_database.sql) | **Monolithic Master Script** — Complete schema init (01–07 + 09) | Safe for single-paste production execution. Produces a clean zero-record baseline. |
+| **01** | [`01_extensions.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/01_extensions.sql) | PostgreSQL Extensions Setup | Enables `uuid-ossp`, `pgcrypto`, `citext`; sets session and DB search path. |
+| **02** | [`02_types_and_enums.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/02_types_and_enums.sql) | Custom Domain ENUM Types | Defines 16 custom ENUMs with `duplicate_object` exception guards. |
+| **03** | [`03_tables.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/03_tables.sql) | DDL for all 40 Domain Tables | Topological DAG order; includes approval workflow columns on `users`. |
+| **04** | [`04_indexes.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/04_indexes.sql) | Performance & Search Indexes | B-tree indexes on foreign keys, status fields, search filters, and approval state. |
+| **05** | [`05_rls_policies.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/05_rls_policies.sql) | Row Level Security (RLS) Policies | `to_regclass` guarded; 100% table coverage; `service_role` + role-based rules. |
+| **06** | [`06_triggers_and_functions.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/06_triggers_and_functions.sql) | Triggers & Helper Functions | `handle_updated_at`, bed sync, clinical audit; guarded against missing tables. |
+| **07** | [`07_storage_buckets.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/07_storage_buckets.sql) | Supabase Storage Buckets | Creates buckets + storage object RLS; guarded against non-storage environments. |
+| **08** | [`08_seed_synthetic_data.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/08_seed_synthetic_data.sql) | **Optional Test Seed Record Dataset** | **DEV/STAGING ONLY**. Synthetic Kenyan test records (Zero real patient PII). |
+| **09** | [`09_verify.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/09_verify.sql) | System Sanity & Verification | Catalog-based dynamic diagnostics; never fails on empty or missing tables. |
+| **10** | [`10_employee_approval_workflow.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/10_employee_approval_workflow.sql) | Incremental Migration | Reconciles approval columns on pre-existing users installations. |
+| **99** | [`99_reset_dev_only.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/99_reset_dev_only.sql) | Clean Teardown & Reset | **NON-PRODUCTION ONLY**. Drops tables in reverse DAG order with prod guard. |
 
 ---
 
-## 2. Execution Instructions via Supabase SQL Editor
+## 2. Production Deployment Instructions
 
-1. Open your Supabase project dashboard at `https://supabase.com/dashboard/project/<your-project-ref>`.
-2. Navigate to **SQL Editor** in the left sidebar.
-3. Open a **New Query**.
-4. Paste the contents of `01_extensions.sql` and click **Run**.
-5. Repeat sequentially for `02` through `08`.
-6. Run `09_verify.sql` to confirm that all 41 tables exist, Row Level Security is enabled on every table, triggers are operational, and synthetic records are populated.
+For **Production Environments**, business tables MUST start empty. Persisted business records will be entered by authorized staff:
+
+### Option A: Single Master Script (Recommended for Supabase SQL Editor)
+1. Open Supabase Dashboard -> **SQL Editor** -> **New query**.
+2. Paste the full contents of [`00_master_init_calyvia_database.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/00_master_init_calyvia_database.sql).
+3. Click **Run**.
+4. Review the returned result tabs:
+   - Extensions: PASS (3/3)
+   - Table count: PASS (40/40 domain tables)
+   - RLS security: 100% enabled
+   - Table inventory: All 40 tables report `PRESENT` and `OK (Clean / Empty for Production)`.
+5. Provision the Primary Superior Administrator:
+   ```bash
+   npm run provision:admin -- --email="admin@calyviawellness.co.ke" --name="Antony Kariuki"
+   ```
+
+### Option B: Modular Sequential Execution
+Execute scripts in strict numerical order:
+1. `01_extensions.sql`
+2. `02_types_and_enums.sql`
+3. `03_tables.sql`
+4. `04_indexes.sql`
+5. `05_rls_policies.sql`
+6. `06_triggers_and_functions.sql`
+7. `07_storage_buckets.sql`
+8. `09_verify.sql`
 
 ---
 
-## 3. Important Safety Notes
+## 3. Development / Staging Test Seeding
 
-- **Never run `99_reset_dev_only.sql` on a production database.** The reset script contains a safety check (`IF current_database() = 'production' THEN RAISE EXCEPTION ...`), but caution is essential.
-- **Service Role Key:** In Option A (Hybrid Architecture), the NestJS API uses the PostgreSQL connection string with full transaction capabilities. The `service_role` has bypass privileges configured in `05_rls_policies.sql` to facilitate API queries.
-- **Sensitive Data Notice:** In accordance with the Kenya Data Protection Act 2019, all clinical narratives (substance histories, diagnoses, notes) in `08_seed_synthetic_data.sql` are strictly synthetic. Production data must be encrypted with AES-256-GCM prior to storage.
+To populate realistic synthetic data for UAT, load testing, or frontend development:
+1. Complete steps 01 through 07.
+2. Execute [`08_seed_synthetic_data.sql`](file:///c:/xampp/htdocs/Calyvia/supabase/sql/08_seed_synthetic_data.sql).
+3. Execute `09_verify.sql` — rows will now report `OK (Contains Persisted Records)`.
+
+---
+
+## 4. Key Error Resolutions & Root Cause Analysis
+
+### A. Resolution for `ERROR: 42P01: relation "public.users" does not exist`
+- **Root Cause:** PostgreSQL `DROP TRIGGER IF EXISTS trg_name ON table_name` throws `42P01` if the table itself is not present (the `IF EXISTS` applies to the trigger, not the table). Furthermore, out-of-order execution before `03_tables.sql` triggered fatal aborts.
+- **Fix:** All trigger bindings in `06_triggers_and_functions.sql` and RLS policies in `05_rls_policies.sql` are now guarded with `IF to_regclass(...) IS NOT NULL`.
+
+### B. Resolution for `ERROR: 42P01: relation "public.system_settings" does not exist`
+- **Root Cause:** Executing `08_seed_synthetic_data.sql` prematurely before table 40 (`system_settings`) was created.
+- **Fix:** Added a pre-flight validation block in `08_seed_synthetic_data.sql` that verifies prerequisite tables before attempting row insertions.
+
+### C. Resolution for `09_verify.sql` Aborts
+- **Root Cause:** Static `UNION ALL SELECT count(*) FROM table` crashed if any single table was missing or during empty schema runs.
+- **Fix:** Refactored Section 6 to use dynamic catalog queries (`query_to_xml` with `to_regclass`), safely evaluating table existence and row counts without throwing exceptions.
