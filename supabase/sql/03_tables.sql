@@ -16,14 +16,24 @@ CREATE TABLE IF NOT EXISTS public.users (
     phone TEXT,
     is_active BOOLEAN NOT NULL DEFAULT true,
     must_change_password BOOLEAN NOT NULL DEFAULT false,
+    approval_status TEXT NOT NULL DEFAULT 'APPROVED',
+    approved_by UUID REFERENCES public.users(id),
+    approved_at TIMESTAMPTZ,
+    rejection_reason TEXT,
+    requested_role TEXT,
     two_factor_secret TEXT,
     last_login_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Ensure must_change_password column exists on pre-existing users table
+-- Idempotent column reconciliations for pre-existing installations
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS approval_status TEXT NOT NULL DEFAULT 'APPROVED';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS approved_by UUID REFERENCES public.users(id);
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS requested_role TEXT;
 
 -- 2. staff_profiles
 CREATE TABLE IF NOT EXISTS public.staff_profiles (

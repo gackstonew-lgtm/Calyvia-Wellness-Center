@@ -9,6 +9,7 @@ SET search_path = public, extensions;
 -- 1. users
 CREATE INDEX IF NOT EXISTS idx_users_role ON public.users(role);
 CREATE INDEX IF NOT EXISTS idx_users_is_active ON public.users(is_active);
+CREATE INDEX IF NOT EXISTS idx_users_approval_status ON public.users(approval_status);
 
 -- 2. staff_profiles
 CREATE INDEX IF NOT EXISTS idx_staff_profiles_department ON public.staff_profiles(department);

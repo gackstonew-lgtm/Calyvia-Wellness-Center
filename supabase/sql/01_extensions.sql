@@ -19,8 +19,18 @@ CREATE EXTENSION IF NOT EXISTS "citext" WITH SCHEMA extensions;
 -- Set session search path to include both public and extensions
 SET search_path = public, extensions;
 
+-- Ensure current database default search path includes extensions schema
+DO $$
+BEGIN
+    EXECUTE format('ALTER DATABASE %I SET search_path TO public, extensions', current_database());
+EXCEPTION WHEN OTHERS THEN
+    -- In cloud/restricted hosted databases where ALTER DATABASE is disallowed, proceed safely
+    NULL;
+END $$;
+
 -- Confirm extensions are active
 DO $$
 BEGIN
     RAISE NOTICE 'Extensions uuid-ossp, pgcrypto, citext successfully verified in search_path.';
 END $$;
+

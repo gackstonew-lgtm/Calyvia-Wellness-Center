@@ -14,6 +14,16 @@
 SET search_path = public, extensions;
 
 -- ------------------------------------------------------------------------------
+-- Pre-flight Prerequisite Validation Guard
+-- ------------------------------------------------------------------------------
+DO $$
+BEGIN
+    IF to_regclass('public.users') IS NULL OR to_regclass('public.system_settings') IS NULL THEN
+        RAISE EXCEPTION 'Prerequisite domain tables (public.users, public.system_settings) are missing. Please execute 01_extensions.sql, 02_types_and_enums.sql, and 03_tables.sql prior to running this seed script.';
+    END IF;
+END $$;
+
+-- ------------------------------------------------------------------------------
 -- 1. Master System Settings
 -- ------------------------------------------------------------------------------
 INSERT INTO public.system_settings (id, setting_key, setting_value, description)
@@ -34,17 +44,20 @@ ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value;
 -- Generated via argon2.hash('Clinical#2026')
 -- $argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw
 
-INSERT INTO public.users (id, email, password_hash, role, full_name, phone, is_active)
+INSERT INTO public.users (id, email, password_hash, role, full_name, phone, is_active, approval_status)
 VALUES 
-    ('10000000-0000-0000-0000-000000000001', 'admin@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'SUPER_ADMIN', 'Antony Kariuki', '+254711000001', true),
-    ('10000000-0000-0000-0000-000000000002', 'director@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'MEDICAL_DIRECTOR', 'Dr. Margaret Nduta', '+254711000002', true),
-    ('10000000-0000-0000-0000-000000000003', 'doctor@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'DOCTOR_PSYCHIATRIST', 'Dr. Faith Mwangi', '+254711000003', true),
-    ('10000000-0000-0000-0000-000000000004', 'nurse@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'NURSE', 'Nurse Beatrice Wanjiku', '+254711000004', true),
-    ('10000000-0000-0000-0000-000000000005', 'counsellor@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'COUNSELLOR', 'David Ochieng', '+254711000005', true),
-    ('10000000-0000-0000-0000-000000000006', 'pharmacist@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'PHARMACIST', 'Mary Njeri', '+254711000006', true),
-    ('10000000-0000-0000-0000-000000000007', 'reception@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'ADMISSIONS_FRONT_DESK', 'Grace Achieng', '+254711000007', true),
-    ('10000000-0000-0000-0000-000000000008', 'finance@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'FINANCE_BILLING', 'Peter Kimani', '+254711000008', true)
-ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash;
+    ('10000000-0000-0000-0000-000000000001', 'admin@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'SUPER_ADMIN', 'Antony Kariuki', '+254711000001', true, 'APPROVED'),
+    ('10000000-0000-0000-0000-000000000002', 'director@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'MEDICAL_DIRECTOR', 'Dr. Margaret Nduta', '+254711000002', true, 'APPROVED'),
+    ('10000000-0000-0000-0000-000000000003', 'doctor@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'DOCTOR_PSYCHIATRIST', 'Dr. Faith Mwangi', '+254711000003', true, 'APPROVED'),
+    ('10000000-0000-0000-0000-000000000004', 'nurse@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'NURSE', 'Nurse Beatrice Wanjiku', '+254711000004', true, 'APPROVED'),
+    ('10000000-0000-0000-0000-000000000005', 'counsellor@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'COUNSELLOR', 'David Ochieng', '+254711000005', true, 'APPROVED'),
+    ('10000000-0000-0000-0000-000000000006', 'pharmacist@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'PHARMACIST', 'Mary Njeri', '+254711000006', true, 'APPROVED'),
+    ('10000000-0000-0000-0000-000000000007', 'reception@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'ADMISSIONS_FRONT_DESK', 'Grace Achieng', '+254711000007', true, 'APPROVED'),
+    ('10000000-0000-0000-0000-000000000008', 'finance@calyviawellness.co.ke', '$argon2id$v=19$m=65536,t=3,p=4$ZTop3yby7kgoIxa67awZvw$eorm7ENyKA7AygopdsoVFM4FJB5RA3ekRhLSDMBSGsw', 'FINANCE_BILLING', 'Peter Kimani', '+254711000008', true, 'APPROVED')
+ON CONFLICT (email) DO UPDATE SET 
+    password_hash = EXCLUDED.password_hash,
+    approval_status = 'APPROVED',
+    is_active = true;
 
 INSERT INTO public.staff_profiles (id, user_id, national_id_encrypted, department, job_title, license_number, license_board, date_joined)
 VALUES 

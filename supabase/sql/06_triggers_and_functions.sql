@@ -19,7 +19,7 @@ BEGIN
 END;
 $$;
 
--- Apply updated_at trigger across all tables with updated_at column
+-- Apply updated_at trigger safely across all tables with updated_at column
 DO $$
 DECLARE
     tbl text;
@@ -30,13 +30,17 @@ DECLARE
     ];
 BEGIN
     FOREACH tbl IN ARRAY tables LOOP
-        EXECUTE format('
-            DROP TRIGGER IF EXISTS trg_%I_updated_at ON public.%I;
-            CREATE TRIGGER trg_%I_updated_at
-                BEFORE UPDATE ON public.%I
-                FOR EACH ROW
-                EXECUTE FUNCTION public.handle_updated_at();
-        ', tbl, tbl, tbl, tbl);
+        IF to_regclass(format('public.%I', tbl)) IS NOT NULL THEN
+            EXECUTE format('
+                DROP TRIGGER IF EXISTS trg_%I_updated_at ON public.%I;
+                CREATE TRIGGER trg_%I_updated_at
+                    BEFORE UPDATE ON public.%I
+                    FOR EACH ROW
+                    EXECUTE FUNCTION public.handle_updated_at();
+            ', tbl, tbl, tbl, tbl);
+        ELSE
+            RAISE NOTICE 'Skipping updated_at trigger: public.% does not exist yet.', tbl;
+        END IF;
     END LOOP;
 END $$;
 
@@ -74,11 +78,18 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS trg_sync_bed_occupancy ON public.bed_allocations;
-CREATE TRIGGER trg_sync_bed_occupancy
-    AFTER INSERT OR UPDATE ON public.bed_allocations
-    FOR EACH ROW
-    EXECUTE FUNCTION public.sync_bed_occupancy();
+DO $$
+BEGIN
+    IF to_regclass('public.bed_allocations') IS NOT NULL AND to_regclass('public.beds') IS NOT NULL THEN
+        DROP TRIGGER IF EXISTS trg_sync_bed_occupancy ON public.bed_allocations;
+        CREATE TRIGGER trg_sync_bed_occupancy
+            AFTER INSERT OR UPDATE ON public.bed_allocations
+            FOR EACH ROW
+            EXECUTE FUNCTION public.sync_bed_occupancy();
+    ELSE
+        RAISE NOTICE 'Skipping trg_sync_bed_occupancy: public.bed_allocations or public.beds does not exist yet.';
+    END IF;
+END $$;
 
 -- ------------------------------------------------------------------------------
 -- 3. Automated Audit Log Helper Function
@@ -113,15 +124,25 @@ BEGIN
 END;
 $$;
 
--- Apply audit trigger on high-sensitivity tables
-DROP TRIGGER IF EXISTS trg_audit_clinical_notes ON public.clinical_notes;
-CREATE TRIGGER trg_audit_clinical_notes
-    AFTER INSERT OR UPDATE OR DELETE ON public.clinical_notes
-    FOR EACH ROW
-    EXECUTE FUNCTION public.log_clinical_audit_event();
+DO $$
+BEGIN
+    IF to_regclass('public.clinical_notes') IS NOT NULL AND to_regclass('public.audit_logs') IS NOT NULL THEN
+        DROP TRIGGER IF EXISTS trg_audit_clinical_notes ON public.clinical_notes;
+        CREATE TRIGGER trg_audit_clinical_notes
+            AFTER INSERT OR UPDATE OR DELETE ON public.clinical_notes
+            FOR EACH ROW
+            EXECUTE FUNCTION public.log_clinical_audit_event();
+    ELSE
+        RAISE NOTICE 'Skipping trg_audit_clinical_notes: required tables do not exist yet.';
+    END IF;
 
-DROP TRIGGER IF EXISTS trg_audit_admissions ON public.admissions;
-CREATE TRIGGER trg_audit_admissions
-    AFTER INSERT OR UPDATE OR DELETE ON public.admissions
-    FOR EACH ROW
-    EXECUTE FUNCTION public.log_clinical_audit_event();
+    IF to_regclass('public.admissions') IS NOT NULL AND to_regclass('public.audit_logs') IS NOT NULL THEN
+        DROP TRIGGER IF EXISTS trg_audit_admissions ON public.admissions;
+        CREATE TRIGGER trg_audit_admissions
+            AFTER INSERT OR UPDATE OR DELETE ON public.admissions
+            FOR EACH ROW
+            EXECUTE FUNCTION public.log_clinical_audit_event();
+    ELSE
+        RAISE NOTICE 'Skipping trg_audit_admissions: required tables do not exist yet.';
+    END IF;
+END $$;
