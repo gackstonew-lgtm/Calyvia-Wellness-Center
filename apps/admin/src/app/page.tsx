@@ -306,14 +306,9 @@ export default function AdminDashboardPage() {
   const [pharmacyStock, setPharmacyStock] = useState<any[]>([]);
   const [loadingPharmacy, setLoadingPharmacy] = useState<boolean>(false);
 
-  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [metricsError, setMetricsError] = useState<string | null>(null);
-
   const fetchDashboardMetrics = useCallback(async () => {
     if (!token) return;
     setLoadingMetrics(true);
-    setMetricsError(null);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
       const res = await fetch(`${apiUrl}/dashboard`, {
@@ -322,13 +317,9 @@ export default function AdminDashboardPage() {
       if (res.ok) {
         const data = await res.json();
         setDashboardMetrics(data);
-        setLastSyncedAt(new Date());
-      } else {
-        setMetricsError('Database synchronization issue. Check backend connection.');
       }
     } catch (err) {
       console.warn('Failed to fetch dashboard metrics:', err);
-      setMetricsError('Network timeout reaching API service.');
     } finally {
       setLoadingMetrics(false);
     }
@@ -479,27 +470,6 @@ export default function AdminDashboardPage() {
       setLoadingPharmacy(false);
     }
   }, [token]);
-
-  const handleRefreshAll = useCallback(async () => {
-    if (!token) return;
-    setIsRefreshing(true);
-    setMetricsError(null);
-    try {
-      await Promise.allSettled([
-        fetchDashboardMetrics(),
-        fetchPatients(),
-        fetchAppointments(),
-        fetchLeads(),
-        fetchStaff(),
-        fetchPharmacy(),
-      ]);
-      setLastSyncedAt(new Date());
-    } catch {
-      setMetricsError('Failed to refresh data. Retrying connection...');
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [token, fetchDashboardMetrics, fetchPatients, fetchAppointments, fetchLeads, fetchStaff, fetchPharmacy]);
 
   useEffect(() => {
     if (token) {
@@ -706,23 +676,6 @@ export default function AdminDashboardPage() {
             {/* Live Data Freshness & Quick Action Bar for Dashboard */}
             {activeModule === 'dashboard' && (
               <div className="flex flex-wrap items-center gap-2.5">
-                <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-surface-subtle border border-border text-[11px] font-mono text-muted-foreground">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
-                  <span className="font-semibold text-foreground">PostgreSQL Live</span>
-                  <span>•</span>
-                  <span>{lastSyncedAt ? `Synced ${lastSyncedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Syncing...'}</span>
-                </div>
-
-                <button
-                  onClick={handleRefreshAll}
-                  disabled={isRefreshing}
-                  title="Synchronize live records from database"
-                  aria-label="Refresh dashboard data"
-                  className="p-2 rounded-xl border border-border bg-surface hover:bg-surface-elevated text-foreground active:scale-95 transition-all shadow-xs disabled:opacity-50 flex items-center justify-center cursor-pointer"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-primary' : 'text-muted-foreground'}`} />
-                </button>
-
                 <button
                   onClick={() => setActiveModal('register_patient')}
                   className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold shadow-xs transition-all active:scale-[0.98] cursor-pointer"
@@ -733,19 +686,6 @@ export default function AdminDashboardPage() {
               </div>
             )}
           </div>
-
-          {/* Error Banner if Synchronization has issues */}
-          {metricsError && (
-            <div className="p-3.5 rounded-2xl bg-danger-soft border border-danger/20 flex items-center justify-between text-xs text-danger animate-in fade-in">
-              <div className="flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{metricsError}</span>
-              </div>
-              <button onClick={handleRefreshAll} className="underline font-semibold hover:text-danger/80 cursor-pointer">
-                Retry Now
-              </button>
-            </div>
-          )}
 
           {/* Access Control Barrier: Enforce Role Authorization for Module */}
           {!canAccessModule(user.role, activeModule) && (
@@ -776,7 +716,7 @@ export default function AdminDashboardPage() {
           {/* Module: Dashboard & Management Overview */}
           {activeModule === 'dashboard' && canAccessModule(user.role, 'dashboard') && (
             <div className="space-y-6">
-              {/* Operational Status & Clinical Highlights Banner */}
+              {/* Operational Status & Clinical Highlights Banner (Only shown for critical acuity or active detox) */}
               {(() => {
                 const criticalCount = dashboardMetrics?.clinical?.criticalVitalsAlerts ?? 0;
                 const detoxCases = dashboardMetrics?.admissions?.activeDetoxCases ?? 0;
@@ -829,25 +769,7 @@ export default function AdminDashboardPage() {
                   );
                 }
 
-                return (
-                  <div className="p-3.5 sm:p-4 rounded-2xl bg-surface-subtle border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded-xl bg-primary-soft text-primary flex items-center justify-center flex-shrink-0">
-                        <ShieldCheck className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <span className="font-semibold text-foreground">Facility Operations Nominal</span>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                          Mugutha, Ruiru Center • All patient vitals nominal • 0 active safety incidents logged.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2 text-[11px] font-mono text-muted-foreground self-start sm:self-auto">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                      <span>24/7 Clinical & Nursing Coverage</span>
-                    </div>
-                  </div>
-                );
+                return null;
               })()}
 
               {/* 4 Metric Overview Cards */}
