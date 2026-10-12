@@ -20,8 +20,9 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, onSelectModu
       <div className="flex items-center space-x-2 sm:space-x-4 flex-1 max-w-xl min-w-0">
         {/* Mobile Hamburger Toggle */}
         <button
+          id="calyvia-mobile-menu-btn"
           onClick={onToggleMobileMenu}
-          className="md:hidden p-2 rounded-xl border border-border text-foreground hover:bg-surface-elevated active:scale-95 transition-all flex-shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center"
+          className="md:hidden p-2 rounded-xl border border-border text-foreground hover:bg-surface-elevated active:scale-95 transition-all flex-shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden"
           aria-label="Open navigation menu"
         >
           <Menu className="w-5 h-5 text-foreground" />
