@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { StaffService } from './staff.service';
 import { PrismaService } from '../../database/prisma.service';
 import { UserRole } from '@calyvia/shared';
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 
 describe('StaffService (Admin-Controlled Staff Management)', () => {
   let service: StaffService;

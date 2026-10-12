@@ -204,7 +204,7 @@ export class SecurityService {
     }
   }
 
-  async requestAccess(dto: RequestAccessDto) {
+  async requestAccess(_dto: RequestAccessDto) {
     throw new ForbiddenException(
       'Self-service staff account registration has been disabled. All institutional staff accounts and credentials must be provisioned directly by an authorized Facility Administrator.',
     );
