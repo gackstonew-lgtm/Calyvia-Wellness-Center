@@ -250,7 +250,7 @@ export const SignInPage: React.FC = () => {
               <div className="p-3 rounded-xl bg-surface-subtle border border-border space-y-1">
                 <div className="font-semibold text-foreground">Self-Recovery Procedure:</div>
                 <ul className="list-disc list-inside space-y-0.5 text-[11px]">
-                  <li>Contact the Facility Administrator at <span className="font-mono text-primary">admin@calyviawellness.co.ke</span></li>
+                  <li>Contact Facility Administration (<span className="font-mono text-primary">langatgt2@gmail.com</span> / <span className="font-mono text-primary">gackstoneb@gmail.com</span>)</li>
                   <li>Or visit the ICT & Records Department in person with your staff identification badge.</li>
                 </ul>
               </div>

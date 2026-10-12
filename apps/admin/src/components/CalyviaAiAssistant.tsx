@@ -487,7 +487,7 @@ function generateLocalInstitutionalResponse(query: string): {
   // Clinical safety boundary
   if (q.includes('prescribe') || (q.includes('diagnose') && !q.includes('protocol'))) {
     return {
-      content: `⚠️ **Clinical Safety Boundary & Healthcare Policy**\n\nAs the Calyvia Institutional Management Assistant, I provide operational and administrative guidance.\n\n* **I cannot diagnose individual patients or prescribe medication regimens.**\n* All clinical treatment plans and taper dosages must be verified by licensed Calyvia physicians (**Dr. Evelyn Wanjiku** or **Dr. Antony Baraka**).\n\nFor medication administration schedules, please consult the **e-MAR Chart (Module 08: Pharmacy)**.`,
+      content: `⚠️ **Clinical Safety Boundary & Healthcare Policy**\n\nAs the Calyvia Institutional Management Assistant, I provide operational and administrative guidance.\n\n* **I cannot diagnose individual patients or prescribe medication regimens.**\n* All clinical treatment plans and taper dosages must be verified by licensed Calyvia physicians (**Dr. Langat G.T.** or authorized Medical Officers).\n\nFor medication administration schedules, please consult the **e-MAR Chart (Module 08: Pharmacy)**.`,
       suggestedFollowUps: [
         'What is the CIWA-Ar alcohol protocol?',
         'Give me today\'s operational summary',

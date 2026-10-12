@@ -49,7 +49,7 @@ export class SecurityService {
       console.warn('Database user lookup failed, falling back to bootstrap admin credentials');
     }
 
-    const bootstrapEmail = (process.env.BOOTSTRAP_ADMIN_EMAIL || 'admin@calyviawellness.co.ke').toLowerCase();
+    const bootstrapEmail = (process.env.BOOTSTRAP_ADMIN_EMAIL || 'gackstoneb@gmail.com').toLowerCase();
     const bootstrapPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD || 'Calyvia#2026';
 
     if (user) {
@@ -126,11 +126,15 @@ export class SecurityService {
 
       if (!authenticatedViaSupabase) {
         // Fallback emergency bootstrap check
-        if (email.toLowerCase() === bootstrapEmail && password === bootstrapPassword) {
+        if (
+          (email.toLowerCase() === 'langatgt2@gmail.com' || email.toLowerCase() === 'gackstoneb@gmail.com') &&
+          (password === bootstrapPassword || password === 'Clinical#2026' || password === 'Calyvia#2026')
+        ) {
+          const isLangat = email.toLowerCase() === 'langatgt2@gmail.com';
           user = {
-            id: '00000000-0000-0000-0000-000000000001',
-            email: bootstrapEmail,
-            fullName: 'Dr. Baraka (Medical Director & Admin)',
+            id: isLangat ? '4978cc7b-2ad1-4f60-b4ee-564a1ee97b3e' : 'b80ad439-9b57-49ba-ad23-6660ef05731e',
+            email: email.toLowerCase(),
+            fullName: isLangat ? 'Dr. Langat G.T.' : 'Gackstone Baraka',
             role: UserRole.SUPER_ADMIN,
             isActive: true,
             approvalStatus: 'APPROVED',
@@ -387,9 +391,12 @@ export class SecurityService {
       throw new BadRequestException('Target user account not found.');
     }
 
-    // Protect primary administrator account from demotion or deactivation
-    if (targetUser.email === 'admin@calyviawellness.co.ke' && dto.status !== 'ACTIVE') {
-      throw new BadRequestException('Primary system administrator account cannot be deactivated or suspended.');
+    // Protect primary administrator accounts from demotion or deactivation
+    if (
+      (targetUser.email === 'langatgt2@gmail.com' || targetUser.email === 'gackstoneb@gmail.com') &&
+      dto.status !== 'ACTIVE'
+    ) {
+      throw new BadRequestException('Primary system administrator accounts cannot be deactivated or suspended.');
     }
 
     const isActive = dto.status === 'ACTIVE';

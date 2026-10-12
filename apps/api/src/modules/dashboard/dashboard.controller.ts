@@ -13,6 +13,19 @@ import { UserRole } from '@calyvia/shared';
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
+  @Get()
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.FACILITY_ADMIN,
+    UserRole.MEDICAL_DIRECTOR,
+    UserRole.MANAGEMENT_EXECUTIVE,
+    UserRole.FINANCE_BILLING,
+  )
+  @ApiOperation({ summary: 'Retrieve comprehensive real-time facility KPIs and census' })
+  async getDashboard() {
+    return this.dashboardService.getExecutiveMetrics();
+  }
+
   @Get('metrics')
   @Roles(
     UserRole.SUPER_ADMIN,

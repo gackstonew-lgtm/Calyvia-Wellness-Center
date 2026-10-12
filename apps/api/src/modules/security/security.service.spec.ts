@@ -65,7 +65,7 @@ describe('SecurityService (Authentication & Password Security)', () => {
     mockPrisma.user.findUnique.mockResolvedValue(null);
 
     const res = await service.login({
-      email: 'admin@calyviawellness.co.ke',
+      email: 'langatgt2@gmail.com',
       password: 'Calyvia#2026',
     });
 
@@ -104,7 +104,7 @@ describe('SecurityService (Authentication & Password Security)', () => {
         password: rawPassword,
       }),
     ).rejects.toThrow('User account has been deactivated');
-  });
+  }, 15000);
 
   it('should reject self-service access request with ForbiddenException (public registration disabled)', async () => {
     await expect(

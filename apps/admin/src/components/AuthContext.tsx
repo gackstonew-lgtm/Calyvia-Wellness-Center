@@ -288,14 +288,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const normalizedEmail = email.trim().toLowerCase();
       
       const KNOWN_STAGING_USERS: Record<string, { fullName: string; role: UserRole; dept: string; title: string }> = {
-        'admin@calyviawellness.co.ke': { fullName: 'Dr. Antony Baraka', role: UserRole.SUPER_ADMIN, dept: 'Administration', title: 'Medical Director & Administrator' },
-        'director@calyviawellness.co.ke': { fullName: 'Dr. Margaret Nduta', role: UserRole.MEDICAL_DIRECTOR, dept: 'Clinical Operations', title: 'Medical Director' },
-        'doctor@calyviawellness.co.ke': { fullName: 'Dr. Faith Mwangi', role: UserRole.DOCTOR_PSYCHIATRIST, dept: 'Psychiatry & Detox', title: 'Consultant Psychiatrist' },
-        'nurse@calyviawellness.co.ke': { fullName: 'Nurse Beatrice Wanjiku', role: UserRole.NURSE, dept: 'Inpatient Nursing', title: 'Senior Psychiatric Nurse' },
-        'counsellor@calyviawellness.co.ke': { fullName: 'David Ochieng', role: UserRole.COUNSELLOR, dept: 'Psychology', title: 'Lead Addiction Counsellor' },
-        'pharmacist@calyviawellness.co.ke': { fullName: 'Mary Njeri', role: UserRole.PHARMACIST, dept: 'Dispensary', title: 'Clinical Pharmacist' },
-        'reception@calyviawellness.co.ke': { fullName: 'Grace Achieng', role: UserRole.ADMISSIONS_FRONT_DESK, dept: 'Admissions & Intake', title: 'Admissions Officer' },
-        'finance@calyviawellness.co.ke': { fullName: 'Peter Kimani', role: UserRole.FINANCE_BILLING, dept: 'Billing & Cashier', title: 'Cashier & Billing Officer' },
+        'langatgt2@gmail.com': { fullName: 'Dr. Langat G.T.', role: UserRole.SUPER_ADMIN, dept: 'Administration & Management', title: 'Medical Director & Facility Administrator' },
+        'gackstoneb@gmail.com': { fullName: 'Gackstone Baraka', role: UserRole.SUPER_ADMIN, dept: 'Administration & Management', title: 'Facility Administrator & Operations Head' },
       };
 
       if (KNOWN_STAGING_USERS[normalizedEmail] && (password === 'Clinical#2026' || password === 'Calyvia#2026')) {

@@ -268,10 +268,16 @@ export default function AdminDashboardPage() {
       if (staffRoleFilter !== 'ALL') params.append('role', staffRoleFilter);
       if (staffStatusFilter !== 'ALL') params.append('status', staffStatusFilter);
 
-      const url = `${apiUrl}/staff?${params.toString()}`;
-      const res = await fetch(url, {
+      let res = await fetch(`${apiUrl}/staff?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      // If backend route returns 404 or fails, fallback to Next.js route handler
+      if (res.status === 404) {
+        res = await fetch(`/api/v1/staff?${params.toString()}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
 
       if (res.ok) {
         const data = await res.json();
@@ -323,7 +329,7 @@ export default function AdminDashboardPage() {
     setCreatingStaff(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
-      const res = await fetch(`${apiUrl}/staff/create-account`, {
+      let res = await fetch(`${apiUrl}/staff/create-account`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -331,6 +337,18 @@ export default function AdminDashboardPage() {
         },
         body: JSON.stringify(createStaffForm),
       });
+
+      // Failover to internal Next.js Route Handler if standalone VPS returns 404
+      if (res.status === 404) {
+        res = await fetch('/api/v1/staff/create-account', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(createStaffForm),
+        });
+      }
 
       const data = await res.json().catch(() => ({}));
 
@@ -392,7 +410,7 @@ export default function AdminDashboardPage() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
-      const res = await fetch(`${apiUrl}/staff/${selectedStaffUser.id}`, {
+      let res = await fetch(`${apiUrl}/staff/${selectedStaffUser.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -400,6 +418,17 @@ export default function AdminDashboardPage() {
         },
         body: JSON.stringify(editStaffForm),
       });
+
+      if (res.status === 404) {
+        res = await fetch(`/api/v1/staff/${selectedStaffUser.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(editStaffForm),
+        });
+      }
 
       const data = await res.json().catch(() => ({}));
 
@@ -443,7 +472,7 @@ export default function AdminDashboardPage() {
     setResettingPassword(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
-      const res = await fetch(`${apiUrl}/staff/${selectedStaffUser.id}/reset-password`, {
+      let res = await fetch(`${apiUrl}/staff/${selectedStaffUser.id}/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -451,6 +480,17 @@ export default function AdminDashboardPage() {
         },
         body: JSON.stringify(resetPasswordForm),
       });
+
+      if (res.status === 404) {
+        res = await fetch(`/api/v1/staff/${selectedStaffUser.id}/reset-password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(resetPasswordForm),
+        });
+      }
 
       const data = await res.json().catch(() => ({}));
 
@@ -482,7 +522,7 @@ export default function AdminDashboardPage() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
-      const res = await fetch(`${apiUrl}/staff/${staffUser.id}/status`, {
+      let res = await fetch(`${apiUrl}/staff/${staffUser.id}/status`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -493,6 +533,20 @@ export default function AdminDashboardPage() {
           reason: isCurrentlyActive ? 'Account suspended by administrator' : 'Account re-activated',
         }),
       });
+
+      if (res.status === 404) {
+        res = await fetch(`/api/v1/staff/${staffUser.id}/status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            status: targetStatus,
+            reason: isCurrentlyActive ? 'Account suspended by administrator' : 'Account re-activated',
+          }),
+        });
+      }
 
       const data = await res.json().catch(() => ({}));
 
@@ -530,7 +584,7 @@ export default function AdminDashboardPage() {
   const [newAppointment, setNewAppointment] = useState({
     title: '',
     patientId: '',
-    staffMemberName: 'Dr. Evelyn Wanjiku',
+    staffMemberName: 'Dr. Langat G.T.',
     appointmentType: 'PSYCHIATRIC_REVIEW',
     time: '10:00 AM',
     location: 'Consultation Suite A',
@@ -560,9 +614,25 @@ export default function AdminDashboardPage() {
     setLoadingMetrics(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
-      const res = await fetch(`${apiUrl}/dashboard`, {
+      // First try /dashboard/metrics which is the active route on the backend
+      let res = await fetch(`${apiUrl}/dashboard/metrics`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      // If not ok, try /dashboard
+      if (!res.ok) {
+        res = await fetch(`${apiUrl}/dashboard`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+
+      // If still 404, fallback to Next.js route handler
+      if (res.status === 404) {
+        res = await fetch('/api/v1/dashboard', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+
       if (res.ok) {
         const data = await res.json();
         setDashboardMetrics(data);
@@ -844,7 +914,7 @@ export default function AdminDashboardPage() {
       });
       if (res.ok) {
         setActiveModal(null);
-        setNewAppointment({ title: '', patientId: '', staffMemberName: 'Dr. Evelyn Wanjiku', appointmentType: 'PSYCHIATRIC_REVIEW', time: '10:00 AM', location: 'Consultation Suite A' });
+        setNewAppointment({ title: '', patientId: '', staffMemberName: 'Dr. Langat G.T.', appointmentType: 'PSYCHIATRIC_REVIEW', time: '10:00 AM', location: 'Consultation Suite A' });
         alert(`Appointment scheduled successfully.`);
         fetchAppointments();
         fetchDashboardMetrics();
@@ -866,7 +936,7 @@ export default function AdminDashboardPage() {
 
     setAppointments((prev) => [created, ...prev]);
     setActiveModal(null);
-    setNewAppointment({ title: '', patientId: '', staffMemberName: 'Dr. Evelyn Wanjiku', appointmentType: 'PSYCHIATRIC_REVIEW', time: '10:00 AM', location: 'Consultation Suite A' });
+    setNewAppointment({ title: '', patientId: '', staffMemberName: 'Dr. Langat G.T.', appointmentType: 'PSYCHIATRIC_REVIEW', time: '10:00 AM', location: 'Consultation Suite A' });
     alert(`Appointment scheduled for ${created.patient} with ${created.doctor}`);
   };
 
@@ -3149,10 +3219,18 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setNewAppointment({ ...newAppointment, staffMemberName: e.target.value })}
                   className="w-full bg-surface-subtle border border-border rounded-xl p-2.5 text-foreground focus:outline-none"
                 >
-                  <option value="Dr. Evelyn Wanjiku">Dr. Evelyn Wanjiku (Psychiatrist)</option>
-                  <option value="Dr. Antony Baraka">Dr. Antony Baraka (Clinical Admin)</option>
-                  <option value="Counsellor David">Counsellor David (Addiction Therapist)</option>
-                  <option value="Dr. David Mwangi">Dr. David Mwangi (Medical Officer)</option>
+                  {staffAccounts.length > 0 ? (
+                    staffAccounts.map((s) => (
+                      <option key={s.id} value={s.fullName}>
+                        {s.fullName} ({s.staffProfile?.jobTitle || s.role})
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="Dr. Langat G.T.">Dr. Langat G.T. (Medical Director & Administrator)</option>
+                      <option value="Gackstone Baraka">Gackstone Baraka (Facility Administrator & Operations Head)</option>
+                    </>
+                  )}
                 </select>
               </div>
 
@@ -3238,7 +3316,7 @@ export default function AdminDashboardPage() {
                     required
                     value={createStaffForm.fullName}
                     onChange={(e) => setCreateStaffForm({ ...createStaffForm, fullName: e.target.value })}
-                    placeholder="e.g. Nurse Beatrice Wanjiku"
+                    placeholder="e.g. Clinical Staff Name"
                     className="w-full bg-surface-subtle border border-border rounded-xl px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                   />
                 </div>
@@ -3253,7 +3331,7 @@ export default function AdminDashboardPage() {
                     required
                     value={createStaffForm.email}
                     onChange={(e) => setCreateStaffForm({ ...createStaffForm, email: e.target.value })}
-                    placeholder="e.g. b.wanjiku@calyviawellness.co.ke"
+                    placeholder="e.g. staff.member@calyviawellness.co.ke"
                     className="w-full bg-surface-subtle border border-border rounded-xl px-3.5 py-2.5 text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono transition-all"
                   />
                 </div>

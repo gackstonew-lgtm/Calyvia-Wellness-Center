@@ -47,7 +47,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({ token, apiUrl }) =
     patientId: '',
     medicalSummary: '',
     familyBriefingNotes: '',
-    signedByDoctor: 'Dr. Evelyn Wanjiku (Psychiatrist)',
+    signedByDoctor: 'Dr. Langat G.T. (Medical Director & Administrator)',
     relapseRiskLevel: 'MODERATE',
   });
 
@@ -256,7 +256,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({ token, apiUrl }) =
                     patientId: patientsList[0]?.id || '',
                     medicalSummary: '',
                     familyBriefingNotes: '',
-                    signedByDoctor: 'Dr. Evelyn Wanjiku (Psychiatrist)',
+                    signedByDoctor: 'Dr. Langat G.T. (Medical Director & Administrator)',
                     relapseRiskLevel: 'MODERATE',
                   });
                   setModalType('discharge');
