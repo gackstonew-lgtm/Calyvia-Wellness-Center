@@ -101,17 +101,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
-        // Staging token fallback bypass verification
+        // If legacy staging-auth-token-local is in storage, clear it
         if (session.token === 'staging-auth-token-local') {
-          const now = Date.now();
-          if (!session.expiresAt || now < session.expiresAt) {
-            if (isMounted) {
-              setUser(session.user);
-              setToken(session.token);
-            }
-          } else {
-            localStorage.removeItem(STORAGE_KEY);
-          }
+          localStorage.removeItem(STORAGE_KEY);
           if (isMounted) setIsLoading(false);
           return;
         }
@@ -282,38 +274,58 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(false);
       return { success: false, error: 'Malformed authentication response received.' };
     } catch (err: any) {
-      console.warn('Primary API authentication request failed, evaluating offline verification:', err);
+      // Direct Supabase Auth Fallback if NestJS backend API is unreachable
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ylpmrplszdxtlmzzrfgz.supabase.co';
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_CvFaUrKnUvt567KGStZ5vw_lEuJZiUI';
 
-      // Offline / API Connection Fallback for development & staging environments
-      const normalizedEmail = email.trim().toLowerCase();
-      
-      const KNOWN_STAGING_USERS: Record<string, { fullName: string; role: UserRole; dept: string; title: string }> = {
-        'langatgt2@gmail.com': { fullName: 'Dr. Langat G.T.', role: UserRole.SUPER_ADMIN, dept: 'Administration & Management', title: 'Medical Director & Facility Administrator' },
-        'gackstoneb@gmail.com': { fullName: 'Gackstone Baraka', role: UserRole.SUPER_ADMIN, dept: 'Administration & Management', title: 'Facility Administrator & Operations Head' },
-      };
+      try {
+        const supaRes = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: {
+            apikey: supabaseAnonKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+        });
 
-      if (KNOWN_STAGING_USERS[normalizedEmail] && (password === 'Clinical#2026' || password === 'Calyvia#2026')) {
-        const profile = KNOWN_STAGING_USERS[normalizedEmail];
-        const authUser: AuthenticatedUser = {
-          id: `staging-${normalizedEmail}`,
-          email: normalizedEmail,
-          fullName: profile.fullName,
-          role: profile.role,
-          department: profile.dept,
-          jobTitle: profile.title,
-        };
+        if (supaRes.ok) {
+          const supaData = await supaRes.json();
+          if (supaData.access_token && supaData.user) {
+            const role = (supaData.user.app_metadata?.role ||
+              supaData.user.user_metadata?.role ||
+              UserRole.SUPER_ADMIN) as UserRole;
+            const fullName =
+              supaData.user.user_metadata?.fullName ||
+              supaData.user.user_metadata?.full_name ||
+              (email.includes('langat') ? 'Dr. Langat G.T.' : 'Gackstone Baraka');
 
-        const session: StoredSession = {
-          user: authUser,
-          token: 'staging-auth-token-local',
-          expiresAt: Date.now() + 24 * 60 * 60 * 1000,
-        };
+            const authUser: AuthenticatedUser = {
+              id: supaData.user.id,
+              email: supaData.user.email,
+              fullName,
+              role,
+              department: supaData.user.user_metadata?.department || 'Administration & Management',
+              jobTitle: supaData.user.user_metadata?.jobTitle || 'Facility Administrator',
+            };
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-        setUser(authUser);
-        setToken(session.token);
-        setIsLoading(false);
-        return { success: true };
+            const session: StoredSession = {
+              user: authUser,
+              token: supaData.access_token,
+              refreshToken: supaData.refresh_token,
+              expiresAt: rememberMe
+                ? Date.now() + 7 * 24 * 60 * 60 * 1000
+                : Date.now() + 24 * 60 * 60 * 1000,
+            };
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+            setUser(authUser);
+            setToken(supaData.access_token);
+            setIsLoading(false);
+            return { success: true };
+          }
+        }
+      } catch (supaErr) {
+        console.warn('Direct Supabase authentication attempt failed:', supaErr);
       }
 
       setIsLoading(false);
