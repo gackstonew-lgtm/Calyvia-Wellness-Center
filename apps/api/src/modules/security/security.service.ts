@@ -56,40 +56,49 @@ export class SecurityService {
       this.logger.warn(`[AUTH:${correlationId}] Database user lookup warning: ${err?.message || err}`);
     }
 
-    const bootstrapEmail = (process.env.BOOTSTRAP_ADMIN_EMAIL || 'gackstoneb@gmail.com').toLowerCase();
-    const bootstrapPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD || 'Calyvia#2026';
+    // 1. Authenticate credentials authoritative against Supabase Auth (or argon2 hash in institutional DB)
+    let authenticatedViaSupabase = false;
+    let supabaseAuthUser: any = null;
+
+    if (SupabaseService.staticClient) {
+      try {
+        const { data: authData, error: authErr } = await SupabaseService.staticClient.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
+        if (!authErr && authData?.user) {
+          authenticatedViaSupabase = true;
+          supabaseAuthUser = authData.user;
+          this.logger.log(`[AUTH:${correlationId}] Credentials validated by Supabase Auth for [${normalizedEmail}]`);
+        } else if (authErr) {
+          this.logger.warn(`[AUTH:${correlationId}] Supabase Auth rejected credentials for [${normalizedEmail}]: ${authErr.message}`);
+        }
+      } catch (supaErr: any) {
+        this.logger.warn(`[AUTH:${correlationId}] Supabase Auth connection error: ${supaErr?.message || supaErr}`);
+      }
+    }
 
     if (user) {
-      let isValid = await this.verifyPassword(user.passwordHash, password);
-      if (!isValid && SupabaseService.staticClient) {
-        try {
-          const { data: authData, error: authErr } = await SupabaseService.staticClient.auth.signInWithPassword({
-            email: email.toLowerCase(),
-            password,
-          });
-          if (!authErr && authData?.user) {
-            isValid = true;
-            const newHash = await this.hashPassword(password);
-            this.prisma.user.update({
-              where: { id: user.id },
-              data: { passwordHash: newHash, updatedAt: new Date() },
-            }).catch(() => {});
-          }
-        } catch {}
-      }
-
-      if (!isValid && user.role === UserRole.SUPER_ADMIN && (password === 'Clinical#2026' || password === 'Calyvia#2026' || password === 'CalyviaSecure#2026' || password === bootstrapPassword)) {
-        isValid = true;
-        const newHash = await this.hashPassword(password);
-        this.prisma.user.update({
-          where: { id: user.id },
-          data: { passwordHash: newHash, updatedAt: new Date() },
-        }).catch(() => {});
+      let isValid = authenticatedViaSupabase;
+      if (!isValid && user.passwordHash) {
+        isValid = await this.verifyPassword(user.passwordHash, password);
+        if (isValid) {
+          this.logger.log(`[AUTH:${correlationId}] Credentials validated by institutional password verifier for [${normalizedEmail}]`);
+        }
       }
 
       if (!isValid) {
         this.logger.warn(`[AUTH:${correlationId}] Password verification failed for registered user [${normalizedEmail}]`);
         throw new UnauthorizedException('Invalid email or password');
+      }
+
+      // If user authenticated via Supabase, keep database hash updated if changed
+      if (authenticatedViaSupabase && user.id) {
+        const newHash = await this.hashPassword(password);
+        this.prisma.user.update({
+          where: { id: user.id },
+          data: { passwordHash: newHash, updatedAt: new Date() },
+        }).catch(() => {});
       }
 
       // Check account approval and activation status
@@ -106,60 +115,27 @@ export class SecurityService {
         throw new UnauthorizedException('User account has been deactivated or suspended. Please contact the administrator.');
       }
     } else {
-      // User not yet in public.users: verify via Supabase Auth
-      let authenticatedViaSupabase = false;
-      if (SupabaseService.staticClient) {
-        try {
-          const { data: authData, error: authErr } = await SupabaseService.staticClient.auth.signInWithPassword({
+      // User not yet in public.users: if authenticated via Supabase Auth, provision local record from authoritative identity
+      if (authenticatedViaSupabase && supabaseAuthUser) {
+        const newHash = await this.hashPassword(password);
+        const authRole = supabaseAuthUser.app_metadata?.role || supabaseAuthUser.user_metadata?.role || UserRole.SUPER_ADMIN;
+        const authName = supabaseAuthUser.user_metadata?.fullName || supabaseAuthUser.user_metadata?.full_name || 'Facility Administrator';
+        
+        user = await this.prisma.user.create({
+          data: {
+            id: supabaseAuthUser.id,
             email: normalizedEmail,
-            password,
-          });
-          if (!authErr && authData?.user) {
-            authenticatedViaSupabase = true;
-            this.logger.log(`[AUTH:${correlationId}] Identity verified via Supabase Auth for [${normalizedEmail}]`);
-            const newHash = await this.hashPassword(password);
-            const authRole = authData.user.user_metadata?.role || authData.user.app_metadata?.role || UserRole.SUPER_ADMIN;
-            const authName = authData.user.user_metadata?.fullName || 'Dr. Antony Baraka (Medical Director & Administrator)';
-            user = await this.prisma.user.create({
-              data: {
-                id: authData.user.id,
-                email: normalizedEmail,
-                passwordHash: newHash,
-                role: authRole,
-                fullName: authName,
-                isActive: true,
-                approvalStatus: 'APPROVED',
-                mustChangePassword: false,
-              },
-            });
-          } else if (authErr) {
-            this.logger.warn(`[AUTH:${correlationId}] Supabase Auth returned error for [${normalizedEmail}]: ${authErr.message}`);
-          }
-        } catch (supaErr: any) {
-          this.logger.warn(`[AUTH:${correlationId}] Supabase Auth call exception: ${supaErr?.message || supaErr}`);
-        }
-      }
-
-      if (!authenticatedViaSupabase) {
-        // Fallback emergency bootstrap check
-        if (
-          (normalizedEmail === 'langatgt2@gmail.com' || normalizedEmail === 'gackstoneb@gmail.com') &&
-          (password === bootstrapPassword || password === 'Clinical#2026' || password === 'Calyvia#2026')
-        ) {
-          const isLangat = normalizedEmail === 'langatgt2@gmail.com';
-          user = {
-            id: isLangat ? '4978cc7b-2ad1-4f60-b4ee-564a1ee97b3e' : 'b80ad439-9b57-49ba-ad23-6660ef05731e',
-            email: normalizedEmail,
-            fullName: isLangat ? 'Dr. Langat G.T.' : 'Gackstone Baraka',
-            role: UserRole.SUPER_ADMIN,
+            passwordHash: newHash,
+            role: authRole,
+            fullName: authName,
             isActive: true,
             approvalStatus: 'APPROVED',
-          };
-          this.logger.log(`[AUTH:${correlationId}] Authenticated via emergency bootstrap credentials for [${normalizedEmail}]`);
-        } else {
-          this.logger.warn(`[AUTH:${correlationId}] Identity not found in Supabase Auth or local registry: [${normalizedEmail}]`);
-          throw new UnauthorizedException('Invalid email or password');
-        }
+            mustChangePassword: false,
+          },
+        });
+      } else {
+        this.logger.warn(`[AUTH:${correlationId}] Identity not found or credentials invalid for [${normalizedEmail}]`);
+        throw new UnauthorizedException('Invalid email or password');
       }
     }
 

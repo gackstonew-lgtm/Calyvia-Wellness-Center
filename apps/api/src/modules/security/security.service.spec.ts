@@ -61,18 +61,31 @@ describe('SecurityService (Authentication & Password Security)', () => {
     expect(isInvalid).toBe(false);
   }, 15000);
 
-  it('should authenticate bootstrap admin credentials when database is uninitialized', async () => {
-    mockPrisma.user.findUnique.mockResolvedValue(null);
+  it('should authenticate valid credentials when user exists in database', async () => {
+    const rawPassword = 'ValidSecurePassword#2026';
+    const hash = await service.hashPassword(rawPassword);
+
+    mockPrisma.user.findUnique.mockResolvedValue({
+      id: '4978cc7b-2ad1-4f60-b4ee-564a1ee97b3e',
+      email: 'langatgt2@gmail.com',
+      passwordHash: hash,
+      fullName: 'Dr. Langat G.T.',
+      role: UserRole.SUPER_ADMIN,
+      isActive: true,
+      approvalStatus: 'APPROVED',
+      mustChangePassword: false,
+      staffProfile: { id: 'prof-1' },
+    });
 
     const res = await service.login({
       email: 'langatgt2@gmail.com',
-      password: 'Calyvia#2026',
+      password: rawPassword,
     });
 
     expect(res).toBeDefined();
     expect(res.user.role).toBe(UserRole.SUPER_ADMIN);
     expect(res.tokens.accessToken).toBe('jwt-mock-token-sample');
-  });
+  }, 15000);
 
   it('should reject invalid credentials with UnauthorizedException', async () => {
     mockPrisma.user.findUnique.mockResolvedValue(null);
