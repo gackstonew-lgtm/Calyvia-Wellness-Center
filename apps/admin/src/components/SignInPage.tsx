@@ -52,9 +52,9 @@ export const SignInPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-primary/20 transition-colors duration-200">
+    <div className="min-h-screen-dvh bg-background text-foreground flex flex-col justify-between selection:bg-primary/20 transition-colors duration-200 pl-safe pr-safe">
       {/* Top Utility Bar */}
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between landscape-compact-py">
         <div className="flex items-center space-x-2 text-xs font-medium text-muted-foreground">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span>Calyvia HMIS • Secure Institutional Portal</span>
@@ -75,39 +75,39 @@ export const SignInPage: React.FC = () => {
       </div>
 
       {/* Main Authentication Container */}
-      <div className="w-full max-w-md mx-auto px-4 py-8 sm:py-12 flex-1 flex flex-col justify-center">
+      <div className="w-full max-w-md mx-auto px-4 py-4 sm:py-8 md:py-12 flex-1 flex flex-col justify-center landscape-compact-py">
         {/* Brand Header */}
-        <div className="text-center mb-8 space-y-3">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-soft border border-primary/20 shadow-xs mb-2">
+        <div className="text-center mb-5 sm:mb-8 space-y-2 sm:space-y-3 landscape-compact-gap">
+          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary-soft border border-primary/20 shadow-xs mb-1 sm:mb-2 landscape-compact-logo">
             <img
               src={theme === 'dark' ? '/brand/calyvia-emblem-dark.svg' : '/brand/calyvia-emblem-light.svg'}
               alt="Calyvia Emblem"
               width={42}
               height={42}
-              className="w-10 h-10 object-contain"
+              className="w-9 h-9 sm:w-10 sm:h-10 object-contain"
             />
           </div>
           <div>
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            <h1 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground">
               Calyvia Wellness Center
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 landscape-hide-subtext">
               Hospital Management Information System (HMIS / EMR)
             </p>
           </div>
         </div>
 
         {/* Institutional Sign In Form */}
-        <div className="bg-surface border border-border rounded-3xl p-6 sm:p-8 shadow-elevated space-y-6">
+        <div className="bg-surface border border-border rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-elevated space-y-5 sm:space-y-6">
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-foreground">Personnel Authentication</h2>
+              <h2 className="text-sm sm:text-base font-semibold text-foreground">Personnel Authentication</h2>
               <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary-soft text-primary">
                 <Shield className="w-3 h-3" />
                 <span>Admin Provisioned</span>
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground landscape-hide-subtext">
               Enter your institutional Calyvia credentials to access assigned clinical and administrative modules.
             </p>
           </div>
@@ -210,26 +210,26 @@ export const SignInPage: React.FC = () => {
       </div>
 
       {/* Security & Regulatory Compliance Footer */}
-      <footer className="w-full border-t border-border/60 py-4 px-4 text-center text-[11px] text-muted-foreground space-y-1">
+      <footer className="w-full border-t border-border/60 py-3 sm:py-4 px-4 text-center text-[11px] text-muted-foreground space-y-1 pb-safe landscape-compact-py">
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
           <span className="flex items-center gap-1 text-primary">
             <Shield className="w-3.5 h-3.5" />
             <span>Authorized Healthcare Personnel Only</span>
           </span>
-          <span>•</span>
-          <span>Kenya Data Protection Act, 2019 (Sections 44–47)</span>
-          <span>•</span>
-          <span>Argon2id & AES-256-GCM Cryptographic Protection</span>
+          <span className="landscape-hide-subtext">•</span>
+          <span className="landscape-hide-subtext">Kenya Data Protection Act, 2019 (Sections 44–47)</span>
+          <span className="landscape-hide-subtext">•</span>
+          <span className="landscape-hide-subtext">Argon2id & AES-256-GCM Cryptographic Protection</span>
         </div>
-        <p className="text-[10px] text-muted-foreground/80">
+        <p className="text-[10px] text-muted-foreground/80 landscape-hide-subtext">
           Calyvia Wellness Center • Behind Full Gospel Church, Mugutha, Ruiru, Kiambu County
         </p>
       </footer>
 
       {/* Forgot Password Modal */}
       {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-surface border border-border rounded-3xl max-w-md w-full p-6 shadow-elevated space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
+          <div className="bg-surface border border-border rounded-2xl sm:rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-elevated space-y-4 my-auto">
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-2 text-primary">
                 <HelpCircle className="w-5 h-5" />

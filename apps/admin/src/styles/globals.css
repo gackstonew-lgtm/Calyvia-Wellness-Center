@@ -190,8 +190,44 @@ h1, h2, h3, h4, h5, h6 {
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
 }
+.pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+.pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
 .bottom-safe {
   bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Dynamic viewport height utilities for mobile browsers */
+.min-h-screen-dvh {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+.h-screen-dvh {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Orientation responsive optimization:
+   In mobile landscape (height <= 500px), reflow dense dialogs, authentication containers,
+   and headers to maximize usable vertical space without awkward clipping or hiding action buttons. */
+@media screen and (orientation: landscape) and (max-height: 520px) {
+  .landscape-compact-py {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  .landscape-compact-gap {
+    gap: 0.5rem !important;
+  }
+  .landscape-compact-logo {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+  }
+  .landscape-hide-subtext {
+    display: none !important;
+  }
 }
 
 /* Sidebar scrollbar & accessibility */

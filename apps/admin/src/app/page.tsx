@@ -956,7 +956,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden text-foreground transition-colors duration-200">
+    <div className="flex h-screen-dvh bg-background overflow-hidden text-foreground transition-colors duration-200">
       {/* Sidebar navigation with desktop collapse and mobile drawer support */}
       <Sidebar
         currentModule={activeModule}
@@ -968,7 +968,7 @@ export default function AdminDashboardPage() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden pl-safe pr-safe">
         <Header
           onToggleMobileMenu={() => setMobileMenuOpen(true)}
           onSelectModule={setActiveModule}
