@@ -1,6 +1,7 @@
-import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
+import * as crypto from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
 import { SupabaseService } from '../../database/supabase.service';
 import {
@@ -16,6 +17,8 @@ import { UserRole } from '@calyvia/shared';
 
 @Injectable()
 export class SecurityService {
+  private readonly logger = new Logger(SecurityService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -34,19 +37,23 @@ export class SecurityService {
   }
 
   async login(loginDto: LoginDto) {
+    const correlationId = crypto.randomUUID();
     const { email, password } = loginDto;
+    const normalizedEmail = (email || '').trim().toLowerCase();
+
+    this.logger.log(`[AUTH:${correlationId}] Login attempt initiated for identity [${normalizedEmail}]`);
 
     // Standard institutional credentials lookup in PostgreSQL public schema
     let user = null;
     try {
       if (this.prisma && this.prisma.user) {
         user = await this.prisma.user.findUnique({
-          where: { email: email.toLowerCase() },
+          where: { email: normalizedEmail },
           include: { staffProfile: true },
         });
       }
-    } catch (err) {
-      console.warn('Database user lookup failed, falling back to bootstrap admin credentials');
+    } catch (err: any) {
+      this.logger.warn(`[AUTH:${correlationId}] Database user lookup warning: ${err?.message || err}`);
     }
 
     const bootstrapEmail = (process.env.BOOTSTRAP_ADMIN_EMAIL || 'gackstoneb@gmail.com').toLowerCase();
@@ -81,17 +88,21 @@ export class SecurityService {
       }
 
       if (!isValid) {
+        this.logger.warn(`[AUTH:${correlationId}] Password verification failed for registered user [${normalizedEmail}]`);
         throw new UnauthorizedException('Invalid email or password');
       }
 
       // Check account approval and activation status
       if (user.approvalStatus === 'PENDING') {
+        this.logger.warn(`[AUTH:${correlationId}] Account is PENDING approval for [${normalizedEmail}]`);
         throw new UnauthorizedException('Your account registration is pending administrator authorization.');
       }
       if (user.approvalStatus === 'REJECTED') {
+        this.logger.warn(`[AUTH:${correlationId}] Account was REJECTED for [${normalizedEmail}]`);
         throw new UnauthorizedException('Your access request was reviewed and declined by the hospital administration.');
       }
       if (user.approvalStatus === 'SUSPENDED' || !user.isActive) {
+        this.logger.warn(`[AUTH:${correlationId}] Account is SUSPENDED or INACTIVE for [${normalizedEmail}]`);
         throw new UnauthorizedException('User account has been deactivated or suspended. Please contact the administrator.');
       }
     } else {
@@ -100,18 +111,19 @@ export class SecurityService {
       if (SupabaseService.staticClient) {
         try {
           const { data: authData, error: authErr } = await SupabaseService.staticClient.auth.signInWithPassword({
-            email: email.toLowerCase(),
+            email: normalizedEmail,
             password,
           });
           if (!authErr && authData?.user) {
             authenticatedViaSupabase = true;
+            this.logger.log(`[AUTH:${correlationId}] Identity verified via Supabase Auth for [${normalizedEmail}]`);
             const newHash = await this.hashPassword(password);
             const authRole = authData.user.user_metadata?.role || authData.user.app_metadata?.role || UserRole.SUPER_ADMIN;
             const authName = authData.user.user_metadata?.fullName || 'Dr. Antony Baraka (Medical Director & Administrator)';
             user = await this.prisma.user.create({
               data: {
                 id: authData.user.id,
-                email: email.toLowerCase(),
+                email: normalizedEmail,
                 passwordHash: newHash,
                 role: authRole,
                 fullName: authName,
@@ -120,30 +132,38 @@ export class SecurityService {
                 mustChangePassword: false,
               },
             });
+          } else if (authErr) {
+            this.logger.warn(`[AUTH:${correlationId}] Supabase Auth returned error for [${normalizedEmail}]: ${authErr.message}`);
           }
-        } catch {}
+        } catch (supaErr: any) {
+          this.logger.warn(`[AUTH:${correlationId}] Supabase Auth call exception: ${supaErr?.message || supaErr}`);
+        }
       }
 
       if (!authenticatedViaSupabase) {
         // Fallback emergency bootstrap check
         if (
-          (email.toLowerCase() === 'langatgt2@gmail.com' || email.toLowerCase() === 'gackstoneb@gmail.com') &&
+          (normalizedEmail === 'langatgt2@gmail.com' || normalizedEmail === 'gackstoneb@gmail.com') &&
           (password === bootstrapPassword || password === 'Clinical#2026' || password === 'Calyvia#2026')
         ) {
-          const isLangat = email.toLowerCase() === 'langatgt2@gmail.com';
+          const isLangat = normalizedEmail === 'langatgt2@gmail.com';
           user = {
             id: isLangat ? '4978cc7b-2ad1-4f60-b4ee-564a1ee97b3e' : 'b80ad439-9b57-49ba-ad23-6660ef05731e',
-            email: email.toLowerCase(),
+            email: normalizedEmail,
             fullName: isLangat ? 'Dr. Langat G.T.' : 'Gackstone Baraka',
             role: UserRole.SUPER_ADMIN,
             isActive: true,
             approvalStatus: 'APPROVED',
           };
+          this.logger.log(`[AUTH:${correlationId}] Authenticated via emergency bootstrap credentials for [${normalizedEmail}]`);
         } else {
+          this.logger.warn(`[AUTH:${correlationId}] Identity not found in Supabase Auth or local registry: [${normalizedEmail}]`);
           throw new UnauthorizedException('Invalid email or password');
         }
       }
     }
+
+    this.logger.log(`[AUTH:${correlationId}] Login successful for [${normalizedEmail}], issuing JWT session`);
 
     const payload = {
       sub: user.id,
