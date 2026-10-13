@@ -297,7 +297,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const fullName =
               supaData.user.user_metadata?.fullName ||
               supaData.user.user_metadata?.full_name ||
-              (email.includes('langat') ? 'Dr. Langat G.T.' : 'Gackstone Baraka');
+              (email.toLowerCase().includes('langat')
+                ? 'Dr. Langat G.T.'
+                : email.toLowerCase().includes('admin@')
+                ? 'Facility Administrator'
+                : 'Gackstone Baraka');
 
             const authUser: AuthenticatedUser = {
               id: supaData.user.id,
